@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
+using System.Text;
 
 namespace DistIN.Application
 {
@@ -18,7 +19,18 @@ namespace DistIN.Application
             string databaseFile = Path.Combine(AppDataPath, "distin.db");
 
             AppConfig.Init();
-            Database.Init(databaseFile);
+            Database.Init(databaseFile, () =>
+            {
+                // database seed
+                Database.PublicKeys.Insert(new DistINPublicKey()
+                {
+                    Identity = "root@" + AppConfig.Current.ServiceDomain,
+                    Algorithm = AppConfig.Current.ServiceKeyPair.Algorithm,
+                    Key = AppConfig.Current.ServiceKeyPair.PublicKey,
+                    Date = DateTime.Now,
+                    Signature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, CryptHelper.DecodeUrlBase64(AppConfig.Current.ServiceKeyPair.PublicKey)),
+                });
+            });
             //Blockchain.Init();
         }
 

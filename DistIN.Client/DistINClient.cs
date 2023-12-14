@@ -1,7 +1,8 @@
 ﻿using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
-namespace DistIN
+namespace DistIN.Client
 {
     public static class DistINClient
     {
@@ -13,6 +14,45 @@ namespace DistIN
             PropertyNameCaseInsensitive = true,
             WriteIndented = true // TODO: remove for production
         };
+
+        public static async Task<DistINResponse<DistINPublicKey>> GetPublicKey(string id)
+        {
+            string[] address = id.Split('@');
+            using (HttpClient http = new HttpClient())
+            {
+                string url = constructUrl(address[1], "publicKey", "id", address[0]);
+                return await requestObject<DistINPublicKey>(address[1], url);
+            }
+        }
+
+        public static async Task<DistINResponse<DistINAttribute>> GetAttributeByID(string id, string attributeId)
+        {
+            string[] address = id.Split('@');
+            using (HttpClient http = new HttpClient())
+            {
+                string url = constructUrl(address[1], "attribute", "id", address[0], "attributeId", attributeId);
+                return await requestObject<DistINAttribute>(address[1], url);
+            }
+        }
+        public static async Task<DistINResponse<DistINAttribute>> GetAttributeByName(string id, string attributeName)
+        {
+            string[] address = id.Split('@');
+            using (HttpClient http = new HttpClient())
+            {
+                string url = constructUrl(address[1], "attribute", "id", address[0], "attributeName", attributeName);
+                return await requestObject<DistINAttribute>(address[1], url);
+            }
+        }
+        public static async Task<DistINResponse<DistINAttributeSignature>> GetAttributeSignature(string service, string signatureId)
+        {
+            using (HttpClient http = new HttpClient())
+            {
+                string url = constructUrl(service, "attributeSignature", "id", signatureId);
+                return await requestObject<DistINAttributeSignature>(service, url);
+            }
+        }
+
+
 
         private static string constructUrl(string domain, string action, string parameterName, string parameterValue)
         {
@@ -31,41 +71,21 @@ namespace DistIN
                 parameterName2, parameterValue2, parameterName3, parameterValue3);
         }
 
+        private static async Task<DistINResponse<T>> requestObject<T>(string service, string url)
+        {
+            using (HttpClient http = new HttpClient())
+            {
+                HttpResponseMessage httpResponse = http.GetAsync(url).Result;
+                HttpContent content = httpResponse.Content;
 
-        public static async Task<DistINPublicKey?> GetPublicKey(string id)
-        {
-            string[] address = id.Split('@');
-            using (HttpClient http = new HttpClient())
-            {
-                string url = constructUrl(address[1], "publicKey", "id", address[0]);
-                return await http.GetFromJsonAsync<DistINPublicKey>(url, serializerOptions);
-            }
-        }
+                DistINResponse<T> response = new DistINResponse<T>();
+                response.ResultBinary = await content.ReadAsByteArrayAsync();
+                response.Result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(response.ResultBinary), serializerOptions);
+                response.Service = service;
+                response.Signature = httpResponse.Headers.GetValues("DistIN-Signature").First();
+                response.ServiceVerificationType = Enum.Parse<DistINServiceVerificationType>(httpResponse.Headers.GetValues("DistIN-ServiceVerificationType").First());
 
-        public static async Task<DistINAttribute?> GetAttributeByID(string id, string attributeId)
-        {
-            string[] address = id.Split('@');
-            using (HttpClient http = new HttpClient())
-            {
-                string url = constructUrl(address[1], "attribute", "id", address[0], "attributeId", attributeId);
-                return await http.GetFromJsonAsync<DistINAttribute>(url, serializerOptions);
-            }
-        }
-        public static async Task<DistINAttribute?> GetAttributeByName(string id, string attributeName)
-        {
-            string[] address = id.Split('@');
-            using (HttpClient http = new HttpClient())
-            {
-                string url = constructUrl(address[1], "attribute", "id", address[0], "attributeName", attributeName);
-                return await http.GetFromJsonAsync<DistINAttribute>(url, serializerOptions);
-            }
-        }
-        public static async Task<DistINAttributeSignature?> GetAttributeSignature(string service, string signatureId)
-        {
-            using (HttpClient http = new HttpClient())
-            {
-                string url = constructUrl(service, "attributeSignature", "id", signatureId);
-                return await http.GetFromJsonAsync<DistINAttributeSignature>(url, serializerOptions);
+                return response;
             }
         }
     }

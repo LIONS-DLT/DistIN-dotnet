@@ -19,7 +19,7 @@ namespace DistIN.Application
 
         public static string ConnectionString { get; private set; } = "";
 
-        public static void Init(string filepath)
+        public static void Init(string filepath, Action seedAction)
         {
             ConnectionString = string.Format("Data Source={0};Version=3;", filepath);
             if (!File.Exists(filepath))
@@ -32,6 +32,9 @@ namespace DistIN.Application
                 CreateTableForType<DistINAttributeSignatureReference>();
                 CreateTableForType<DistINCredential>();
                 CreateTableForType<DistINPublicKey>();
+
+                if (seedAction != null)
+                    seedAction();
             }
         }
 

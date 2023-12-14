@@ -6,9 +6,9 @@
 
 
         public string ServiceDomain { get; set; } = string.Empty;
-        public string ServicePublicKey { get; set; } = string.Empty;
-        public string ServicePrivateKey { get; set; } = string.Empty;
-        public DistINKeyAlgorithm ServiceAlgorithm { get; set; } = DistINKeyAlgorithm.DILITHIUM;
+        public DistINServiceVerificationType ServiceVerificationType { get; set; } = DistINServiceVerificationType.DNS;
+
+        public DistINKeyPair ServiceKeyPair { get; set; } = new DistINKeyPair();
 
         public string EthereumUrl { get; set; } = string.Empty;
         public string EthereumPrivateKey { get; set; } = string.Empty;
@@ -27,9 +27,12 @@
                     PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
                     WriteIndented = true
                 })!;
+                if(Current.ServiceKeyPair == null)
+                    Current.ServiceKeyPair = CryptHelper.GenerateKeyPair(DistINKeyAlgorithm.DILITHIUM);
             }
             else
             {
+                Current.ServiceKeyPair = CryptHelper.GenerateKeyPair(DistINKeyAlgorithm.DILITHIUM);
                 Save();
             }
         }

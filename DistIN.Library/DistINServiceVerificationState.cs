@@ -8,11 +8,12 @@ namespace DistIN
 {
     public class DistINServiceVerificationState
     {
-        public ServiceVerificationType Type { get; set; } = ServiceVerificationType.DNS;
+        public string PublicKey { get; set; } = string.Empty;
+        public DistINServiceVerificationType Type { get; set; } = DistINServiceVerificationType.DNS;
         public bool Valid { get; set; } = false;
     }
 
-    public enum ServiceVerificationType
+    public enum DistINServiceVerificationType
     {
         DNS,
         ETHEREUM
