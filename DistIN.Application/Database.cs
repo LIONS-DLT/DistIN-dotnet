@@ -16,6 +16,7 @@ namespace DistIN.Application
         public static DatabaseEntitySet<DistINAttributeSignatureReference> AttributeSignatureRefs { get; private set; } = new DatabaseEntitySet<DistINAttributeSignatureReference>();
         public static DatabaseEntitySet<DistINCredential> Credentials { get; private set; } = new DatabaseEntitySet<DistINCredential>();
         public static DatabaseEntitySet<DistINPublicKey> PublicKeys { get; private set; } = new DatabaseEntitySet<DistINPublicKey>();
+        public static DatabaseEntitySet<AppToken> Tokens { get; private set; } = new DatabaseEntitySet<AppToken>();
 
         public static string ConnectionString { get; private set; } = "";
 
@@ -32,6 +33,7 @@ namespace DistIN.Application
                 CreateTableForType<DistINAttributeSignatureReference>();
                 CreateTableForType<DistINCredential>();
                 CreateTableForType<DistINPublicKey>();
+                CreateTableForType<AppToken>();
 
                 if (seedAction != null)
                     seedAction();

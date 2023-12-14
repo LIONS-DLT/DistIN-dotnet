@@ -8,13 +8,6 @@ namespace DistIN.Client
     {
         private const string SCHEME = "http://"; // TODO: "https://"
 
-        private static JsonSerializerOptions serializerOptions = new JsonSerializerOptions()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            WriteIndented = true // TODO: remove for production
-        };
-
         public static async Task<DistINResponse<DistINPublicKey>> GetPublicKey(string id)
         {
             string[] address = id.Split('@');
@@ -71,7 +64,7 @@ namespace DistIN.Client
                 parameterName2, parameterValue2, parameterName3, parameterValue3);
         }
 
-        private static async Task<DistINResponse<T>> requestObject<T>(string service, string url)
+        private static async Task<DistINResponse<T>> requestObject<T>(string service, string url) where T : DistINObject
         {
             using (HttpClient http = new HttpClient())
             {
@@ -80,7 +73,8 @@ namespace DistIN.Client
 
                 DistINResponse<T> response = new DistINResponse<T>();
                 response.ResultBinary = await content.ReadAsByteArrayAsync();
-                response.Result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(response.ResultBinary), serializerOptions);
+                //response.Result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(response.ResultBinary), DistINObject.JsonSerializerOptions);
+                response.Result = DistINObject.FromJsonString<T>(Encoding.UTF8.GetString(response.ResultBinary));
                 response.Service = service;
                 response.Signature = httpResponse.Headers.GetValues("DistIN-Signature").First();
                 response.ServiceVerificationType = Enum.Parse<DistINServiceVerificationType>(httpResponse.Headers.GetValues("DistIN-ServiceVerificationType").First());

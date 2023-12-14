@@ -8,7 +8,7 @@ namespace DistIN
 {
     public class DistINSignatureRequest : DistINObject
     {
-        public string DisplayText { get; set; } = string.Empty;
+        public string Caption { get; set; } = string.Empty;
         public string RemoteAddress { get; set; } = string.Empty;
         public string Identity { get; set; } = string.Empty;
         public string Challenge { get; set; } = string.Empty;

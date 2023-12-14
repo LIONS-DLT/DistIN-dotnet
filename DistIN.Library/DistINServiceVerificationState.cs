@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DistIN
 {
-    public class DistINServiceVerificationState
+    public class DistINServiceVerificationState : DistINObject
     {
         public string PublicKey { get; set; } = string.Empty;
         public DistINServiceVerificationType Type { get; set; } = DistINServiceVerificationType.DNS;
