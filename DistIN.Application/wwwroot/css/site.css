@@ -1,5 +1,20 @@
+/*
+    LIONS COLORS:
+    
+    orange:         #ed7203
+    light-orange:   #f6a500
+    red:            #c3124c
+    gray/title:     #646464
+    dark-gray/text: #1d1d1b
+*/
+
+@font-face{
+    font-family:AudiowideRegular;
+    src:url('/fonts/Audiowide.ttf');
+}
+
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
@@ -14,5 +29,105 @@ html {
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    font-family: AudiowideRegular;
+    overflow: hidden;
+    color: #1d1d1b;
+}
+
+a, a:active, a:visited{
+    text-decoration:none;
+    color:#c3124c;
+}
+a:hover{
+    color:#ed7203;
+}
+
+h1, h2, h3, h4, h5 {
+    color: #ed7203;
+    background: -webkit-linear-gradient(270deg, #ed7203 0%, #c3124c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.btn-primary {
+    background: -webkit-linear-gradient(270deg, #ed7203 0%, #c3124c 100%);
+    border:none;
+}
+.btn-primary:hover {
+    background: -webkit-linear-gradient(270deg, #c3124c 0%, #ed7203 100%);
+}
+.btn-outline-primary{
+    color:#c3124c;
+    border-color:#c3124c;
+}
+.btn-outline-primary:hover {
+    background-color: #c3124c;
+    color: white;
+    border-color: #c3124c;
+}
+
+.distin-menubar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    line-height:60px;
+    border-bottom: 1px solid #c3124c;
+    color:#c3124c;
+}
+
+.distin-menubar-item {
+    height: 60px;
+    line-height: 60px;
+    display: inline-block;
+    margin-right: 10px;
+    color: #c3124c !important;
+}
+img.distin-menubar-item {
+    margin-left: 10px;
+    height: 40px;
+}
+a.distin-menubar-item, a.distin-menubar-item:visited, a.distin-menubar-item:active {
+    color: #c3124c !important;
+    text-decoration:none;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+a.distin-menubar-item:hover {
+    color: #ed7203 !important;
+    border-radius:10px;
+}
+
+.distin-body {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 40px;
+    overflow-x:hidden;
+    overflow-y:auto;
+    padding:20px;
+}
+
+.distin-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    border-top: 1px solid #c3124c;
+    line-height: 40px;
+    text-align: center;
+    color: #c3124c;
+}
+
+@media(max-width:1024px){
+    .distin-menubar-item > span{
+        display:none;
+    }
+    .distin-menubar-item {
+        font-size: 24px !important;
+    }
 }

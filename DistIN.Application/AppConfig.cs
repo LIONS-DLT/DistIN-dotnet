@@ -5,7 +5,7 @@
         public static AppConfig Current { get; private set; } = new AppConfig();
 
 
-        public string ServiceDomain { get; set; } = string.Empty;
+        public string ServiceDomain { get; set; } = "id.example.org";
         public DistINServiceVerificationType ServiceVerificationType { get; set; } = DistINServiceVerificationType.DNS;
 
         public DistINKeyPair ServiceKeyPair { get; set; } = new DistINKeyPair();

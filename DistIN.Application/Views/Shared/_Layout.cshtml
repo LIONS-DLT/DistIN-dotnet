@@ -3,13 +3,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DistIN.Application</title>
+    <title>DistIN</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/bootstrap-icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DistIN.Application.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
+    @*<header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">DistIN.Application</a>
@@ -41,6 +42,21 @@
             &copy; 2023 - DistIN.Application - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
+    *@
+
+    <div class="distin-menubar">
+        <img class="distin-menubar-item" src="~/img/DistIN_Logo_1024x256px_2.png" />
+        <a href="#" class="distin-menubar-item"><i class="bi bi-house"></i> <span>Home</span></a>
+    </div>
+    <div class="distin-body">
+        @RenderBody()
+    </div>
+    <div class="distin-footer">
+        @AppConfig.Current.ServiceDomain
+    </div>
+
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
