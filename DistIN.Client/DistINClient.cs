@@ -6,7 +6,7 @@ namespace DistIN.Client
 {
     public static class DistINClient
     {
-        private const string SCHEME = "http://"; // TODO: "https://"
+        public static string SCHEME = "http://"; // TODO: "https://"
 
         public static async Task<DistINResponse<DistINPublicKey>> GetPublicKey(string id)
         {

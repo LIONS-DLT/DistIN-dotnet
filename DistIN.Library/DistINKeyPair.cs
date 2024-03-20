@@ -20,5 +20,6 @@ namespace DistIN
         DILITHIUM,
         FALCON_512,
         FALCON_1024,
+        KYBER
     }
 }

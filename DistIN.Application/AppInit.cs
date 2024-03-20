@@ -8,7 +8,7 @@ namespace DistIN.Application
     public static class AppInit
     {
         public static string AppDataPath { get; private set; } = string.Empty;
-        public static string ProductName { get; private set; } = "LIONS.sign";
+        public static string ProductName { get; private set; } = "DistIN";
 
         public static void Init(IWebHostEnvironment environment)
         {
@@ -28,12 +28,59 @@ namespace DistIN.Application
                     Algorithm = AppConfig.Current.ServiceKeyPair.Algorithm,
                     Key = AppConfig.Current.ServiceKeyPair.PublicKey,
                     Date = DateTime.Now,
-                    Signature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, CryptHelper.DecodeUrlBase64(AppConfig.Current.ServiceKeyPair.PublicKey)),
+                    Signature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, Encoding.UTF8.GetBytes(AppConfig.Current.ServiceKeyPair.PublicKey)),
                 });
+
+                demoSeed();
             });
             //Blockchain.Init();
         }
 
+        private static void demoSeed()
+        {
+            List<object> demoIdentities = new List<object>();
+            string demoFile = Path.Combine(AppDataPath, "demo.json");
+
+            for (int i = 0; i <= 9; i++)
+            {
+                DistINKeyPair keyPair = CryptHelper.GenerateKeyPair(DistINKeyAlgorithm.DILITHIUM);
+                DistINPublicKey id = new DistINPublicKey()
+                {
+                    Identity = string.Format("demo{0}@", i) + AppConfig.Current.ServiceDomain,
+                    Algorithm = keyPair.Algorithm,
+                    Key = keyPair.PublicKey,
+                    Date = DateTime.Now,
+                    Signature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, Encoding.UTF8.GetBytes(AppConfig.Current.ServiceKeyPair.PublicKey)),
+                };
+                Database.PublicKeys.Insert(id);
+
+                DistINKeyPair mpk = CryptHelper.GenerateKeyPair(DistINKeyAlgorithm.KYBER);
+
+                DistINAttribute attribute = new DistINAttribute()
+                {
+                    Identity = id.Identity,
+                    MimeType = "text/plain",
+                    Name = "DistINMessagingKey",
+                    Value = mpk.PublicKey
+                };
+                Database.Attributes.Insert(attribute);
+
+                var obj = new
+                {
+                    id = id.Identity,
+                    dilithium = keyPair,
+                    kyber = mpk
+                };
+
+                demoIdentities.Add(obj);
+            }
+
+            File.WriteAllText(demoFile, System.Text.Json.JsonSerializer.Serialize(demoIdentities, new System.Text.Json.JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            }));
+        }
 
         public static void OnActionExecuting(Controller controller, ActionExecutingContext context)
         {

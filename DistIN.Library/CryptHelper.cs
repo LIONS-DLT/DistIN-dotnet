@@ -1,8 +1,10 @@
 ﻿using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Pqc.Crypto.Crystals.Dilithium;
+using Org.BouncyCastle.Pqc.Crypto.Crystals.Kyber;
 using Org.BouncyCastle.Pqc.Crypto.Falcon;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
+using System.Reflection.Emit;
 
 namespace DistIN
 {
@@ -62,15 +64,30 @@ namespace DistIN
 
                 DistINKeyPair keyPair = new DistINKeyPair();
                 keyPair.Algorithm = DistINKeyAlgorithm.DILITHIUM;
-                keyPair.PublicKey = EncodeUrlBase64(publicKey.GetEncoded());
+                keyPair.PublicKey = EncodeKey(publicKey.GetEncoded());
                 keyPair.PrivateKey = EncodeKey(privateKey.GetSpolyLittleF(), privateKey.GetG(), privateKey.GetSpolyBigF());
+
+                return keyPair;
+            }
+            else if(algorithm == DistINKeyAlgorithm.KYBER)
+            {
+                KyberKeyPairGenerator generator = new KyberKeyPairGenerator();
+                generator.Init(new KyberKeyGenerationParameters(new SecureRandom(), KyberParameters.kyber1024));
+                AsymmetricCipherKeyPair kyberKeyPair = generator.GenerateKeyPair();
+                KyberPrivateKeyParameters privateKey = (KyberPrivateKeyParameters)kyberKeyPair.Private;
+                KyberPublicKeyParameters publicKey = (KyberPublicKeyParameters)kyberKeyPair.Public;
+                
+                DistINKeyPair keyPair = new DistINKeyPair();
+                keyPair.Algorithm = DistINKeyAlgorithm.KYBER;
+                keyPair.PublicKey = EncodeKey(publicKey.GetT(), publicKey.GetRho());
+                keyPair.PrivateKey = EncodeKey(privateKey.GetS(), privateKey.GetHpk(), privateKey.GetNonce(), privateKey.GetT(), privateKey.GetRho());
 
                 return keyPair;
             }
             else
             {
                 DilithiumKeyPairGenerator generator = new DilithiumKeyPairGenerator();
-                generator.Init(new DilithiumKeyGenerationParameters(new SecureRandom(), DilithiumParameters.Dilithium5Aes));
+                generator.Init(new DilithiumKeyGenerationParameters(new SecureRandom(), DilithiumParameters.Dilithium5));
 
                 AsymmetricCipherKeyPair cypherKeyPair = generator.GenerateKeyPair();
                 DilithiumPrivateKeyParameters privateKey = (DilithiumPrivateKeyParameters)cypherKeyPair.Private;
@@ -109,7 +126,7 @@ namespace DistIN
             {
                 List<byte[]> pKey = DecodeKey(keyPair.PublicKey);
                 List<byte[]> key = DecodeKey(keyPair.PrivateKey);
-                DilithiumPrivateKeyParameters privKey = new DilithiumPrivateKeyParameters(DilithiumParameters.Dilithium5Aes, pKey[0], key[0], key[1], key[2], key[3], key[4], pKey[1]);
+                DilithiumPrivateKeyParameters privKey = new DilithiumPrivateKeyParameters(DilithiumParameters.Dilithium5, pKey[0], key[0], key[1], key[2], key[3], key[4], pKey[1]);
                 
                 DilithiumSigner signer = new DilithiumSigner();
                 signer.Init(true, privKey);
@@ -147,7 +164,7 @@ namespace DistIN
             else
             {
                 List<byte[]> key = DecodeKey(publicKey);
-                DilithiumPublicKeyParameters pubKey = new DilithiumPublicKeyParameters(DilithiumParameters.Dilithium5Aes, key[0], key[1]);
+                DilithiumPublicKeyParameters pubKey = new DilithiumPublicKeyParameters(DilithiumParameters.Dilithium5, key[0], key[1]);
 
                 DilithiumSigner verifier = new DilithiumSigner();
                 verifier.Init(false, pubKey);
@@ -155,5 +172,6 @@ namespace DistIN
                 return verifier.VerifySignature(data, sign);
             }
         }
+
     }
 }
