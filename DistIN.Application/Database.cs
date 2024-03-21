@@ -5,6 +5,7 @@ using System.Reflection.Metadata;
 using System.Reflection;
 using System.Security.Principal;
 using System.Text;
+using DistIN.DistAN;
 
 namespace DistIN.Application
 {
@@ -17,6 +18,9 @@ namespace DistIN.Application
         public static DatabaseEntitySet<DistINCredential> Credentials { get; private set; } = new DatabaseEntitySet<DistINCredential>();
         public static DatabaseEntitySet<DistINPublicKey> PublicKeys { get; private set; } = new DatabaseEntitySet<DistINPublicKey>();
         public static DatabaseEntitySet<AppToken> Tokens { get; private set; } = new DatabaseEntitySet<AppToken>();
+
+        // DistAN Enities
+        public static DatabaseEntitySet<DistANMessage> Messages { get; private set; } = new DatabaseEntitySet<DistANMessage>();
 
         public static string ConnectionString { get; private set; } = "";
 
@@ -34,6 +38,8 @@ namespace DistIN.Application
                 CreateTableForType<DistINCredential>();
                 CreateTableForType<DistINPublicKey>();
                 CreateTableForType<AppToken>();
+                // DistAN
+                CreateTableForType<DistANMessage>();
 
                 if (seedAction != null)
                     seedAction();
@@ -317,6 +323,17 @@ namespace DistIN.Application
         public bool Update(T item)
         {
             return Database.Update<T>(item);
+        }
+
+
+        public bool Delete(string id)
+        {
+            Type type = typeof(T);
+
+            StringBuilder sql = new StringBuilder();
+            sql.Append(string.Format("DELETE FROM [{0}] WHERE [ID]='{1}'", type.Name, id));
+
+            return Database.ExecuteSQL(sql.ToString()) > 0;
         }
     }
 

@@ -12,7 +12,7 @@ namespace DistIN.Application.Controllers
     {
         #region HELPER METHODS
 
-        private IActionResult getSignedObjectResult<T>(T data) where T : DistINObject
+        protected IActionResult getSignedObjectResult<T>(T data) where T : DistINObject
         {
             byte[] json = Encoding.UTF8.GetBytes(data.ToJsonString());
 
@@ -23,7 +23,7 @@ namespace DistIN.Application.Controllers
             return File(json, "text/json");
         }
 
-        private bool checkToken()
+        protected bool checkToken()
         {
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
             string token = this.HttpContext.Request.Headers["DistIN-Token"];
@@ -45,7 +45,7 @@ namespace DistIN.Application.Controllers
             return false;
         }
 
-        private T? getRequestObject<T>() where T : DistINObject
+        protected T? getRequestObject<T>() where T : DistINObject
         {
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
             string signature = this.HttpContext.Request.Headers["DistIN-Signature"];
@@ -124,6 +124,8 @@ namespace DistIN.Application.Controllers
             {
                 DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity, attributeName)).FirstOrDefault();
                 if(attribute == null)
+                    return StatusCode(StatusCodes.Status404NotFound);
+                if(!attribute.IsPublic)
                     return StatusCode(StatusCodes.Status404NotFound);
 
                 return getSignedObjectResult(attribute);

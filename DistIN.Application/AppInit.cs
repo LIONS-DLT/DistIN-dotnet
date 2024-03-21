@@ -61,7 +61,8 @@ namespace DistIN.Application
                     Identity = id.Identity,
                     MimeType = "text/plain",
                     Name = "DistINMessagingKey",
-                    Value = mpk.PublicKey
+                    Value = mpk.PublicKey,
+                    IsPublic = true,
                 };
                 Database.Attributes.Insert(attribute);
 
