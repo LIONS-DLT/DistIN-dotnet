@@ -151,28 +151,28 @@ namespace DistIN.Client
         }
         private static string constructDistANUrl(string domain, string action, string parameterName, string parameterValue)
         {
-            return string.Format("{0}{1}/distan/{2}?{3}={4}", SCHEME, domain, action, parameterName, parameterValue);
+            return string.Format("{0}{1}/distan/{2}?{3}={4}", SCHEME, domain, action, parameterName, Uri.EscapeDataString(parameterValue));
         }
         private static string constructUrl(string domain, string action, string parameterName, string parameterValue)
         {
-            return string.Format("{0}{1}/distin/{2}?{3}={4}", SCHEME, domain, action, parameterName, parameterValue);
+            return string.Format("{0}{1}/distin/{2}?{3}={4}", SCHEME, domain, action, parameterName, Uri.EscapeDataString(parameterValue));
         }
         private static string constructUrl(string domain, string action, string parameterName1, string parameterValue1, 
             string parameterName2, string parameterValue2)
         {
-            return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}", SCHEME, domain, action, parameterName1, parameterValue1, 
-                parameterName2, parameterValue2);
+            return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}", SCHEME, domain, action, parameterName1, Uri.EscapeDataString(parameterValue1), 
+                parameterName2, Uri.EscapeDataString(parameterValue2));
         }
         private static string constructUrl(string domain, string action, string parameterName1, string parameterValue1,
             string parameterName2, string parameterValue2, string parameterName3, string parameterValue3)
         {
-            return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}&{7}={8}", SCHEME, domain, action, parameterName1, parameterValue1, 
-                parameterName2, parameterValue2, parameterName3, parameterValue3);
+            return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}&{7}={8}", SCHEME, domain, action, parameterName1, Uri.EscapeDataString(parameterValue1), 
+                parameterName2, Uri.EscapeDataString(parameterValue2), parameterName3, Uri.EscapeDataString(parameterValue3));
         }
 
         private static async Task<DistINResponse<T>> requestObject<T>(string service, string url) where T : DistINObject
         {
-            return await requestObject<T>(service, url);
+            return await requestObject<T>(false, service, url);
         }
         private static async Task<DistINResponse<T>> requestObject<T>(bool tokenRequred, string service, string url) where T : DistINObject
         {

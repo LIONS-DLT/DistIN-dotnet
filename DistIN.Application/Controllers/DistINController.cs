@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace DistIN.Application.Controllers
 {
-    [Route("distin")]
+    //[Route("distin")]
     public class DistINController : Controller
     {
         #region HELPER METHODS
@@ -19,7 +19,8 @@ namespace DistIN.Application.Controllers
             string signature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, json);
             this.HttpContext.Response.Headers.Add("DistIN-Signature", signature);
             this.HttpContext.Response.Headers.Add("DistIN-ServiceVerificationType", AppConfig.Current.ServiceVerificationType.ToString());
-
+            this.HttpContext.Response.ContentLength = json.LongLength;
+            this.HttpContext.Response.ContentType = "application/json";
             return File(json, "text/json");
         }
 
@@ -68,7 +69,8 @@ namespace DistIN.Application.Controllers
             if (!CryptHelper.VerifySinature(publicKey, signature, data))
                 return null;
 
-            return this.Request.ReadFromJsonAsync<T>(DistINObject.JsonSerializerOptions).Result!;
+            return DistINObject.FromJsonString<T>(Encoding.UTF8.GetString(data));
+            //return this.Request.ReadFromJsonAsync<T>(DistINObject.JsonSerializerOptions).Result!;
         }
 
         #endregion
@@ -246,13 +248,13 @@ namespace DistIN.Application.Controllers
         public IActionResult LoginRequest(string id)
         {
             DistINLoginChallange challange = new DistINLoginChallange();
-            challange.Challange = LoginRequestCache.CreateChallange(id)!;
+            challange.Challange = LoginRequestCache.CreateChallange(challange.ID)!;
             return getSignedObjectResult(challange);
         }
 
         [HttpGet]
         [HttpPost]
-        public IActionResult Login()
+        public IActionResult Login(string id)
         {
             DistINLoginData? loginData = getRequestObject<DistINLoginData>();
             if(loginData == null)
@@ -262,8 +264,10 @@ namespace DistIN.Application.Controllers
             if (challange == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
 
-            string identity = loginData.ID + "@" + AppConfig.Current.ServiceDomain;
+            string identity = id + "@" + AppConfig.Current.ServiceDomain;
             DistINPublicKey publicKey = AppCache.GetPublicKey(identity);
+            if (challange == null)
+                return StatusCode(StatusCodes.Status400BadRequest);
 
             if (!CryptHelper.VerifySinature(publicKey, loginData.Signature, Encoding.UTF8.GetBytes(challange)))
                 return StatusCode(StatusCodes.Status401Unauthorized);
