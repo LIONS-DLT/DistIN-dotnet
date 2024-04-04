@@ -1,4 +1,5 @@
 using DistIN.Application;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +10,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.Configure<KestrelServerOptions>(options =>
 {
     options.AllowSynchronousIO = true;
+    
 });
+
+// TODO: for test scenario only!
+builder.WebHost.UseUrls("http://*:5157");
 
 var app = builder.Build();
 
