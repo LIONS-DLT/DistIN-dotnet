@@ -1,4 +1,4 @@
-﻿using System.Data.SQLite;
+﻿//using System.Data.SQLite;
 using System.Data;
 using System.Globalization;
 using System.Reflection.Metadata;
@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Security.Principal;
 using System.Text;
 using DistIN.DistAN;
+using Microsoft.Data.Sqlite;
 
 namespace DistIN.Application
 {
@@ -26,10 +27,12 @@ namespace DistIN.Application
 
         public static void Init(string filepath, Action seedAction)
         {
-            ConnectionString = string.Format("Data Source={0};Version=3;", filepath);
+            ConnectionString = string.Format("Data Source={0}", filepath);
             if (!File.Exists(filepath))
             {
-                SQLiteConnection.CreateFile(filepath);
+                //SqliteConnection.CreateFile(filepath);
+                SQLitePCL.Batteries_V2.Init();
+                SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
 
                 CreateTableForType<DistINIdentity>();
                 CreateTableForType<DistINAttribute>();
@@ -50,12 +53,12 @@ namespace DistIN.Application
         {
             try
             {
-                SQLiteConnection con = new SQLiteConnection(ConnectionString);
+                SqliteConnection con = new SqliteConnection(ConnectionString);
                 con.Open();
 
-                SQLiteDataAdapter adapter = new SQLiteDataAdapter(sql, con);
+                SqliteCommand adapter = new SqliteCommand(sql, con);
                 DataTable table = new DataTable();
-                adapter.Fill(table);
+                table.Load(adapter.ExecuteReader());
 
                 con.Close();
                 return table;
@@ -69,10 +72,10 @@ namespace DistIN.Application
         {
             try
             {
-                SQLiteConnection con = new SQLiteConnection(ConnectionString);
+                SqliteConnection con = new SqliteConnection(ConnectionString);
                 con.Open();
 
-                SQLiteCommand cmd = con.CreateCommand();
+                SqliteCommand cmd = con.CreateCommand();
                 cmd.CommandText = sql;
                 int result = cmd.ExecuteNonQuery();
 

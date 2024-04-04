@@ -43,7 +43,7 @@ namespace DistIN.Application.Controllers
             if (credentialContent.Type != "distin-token")
                 return false;
 
-            return false;
+            return true;
         }
 
         protected T? getRequestObject<T>() where T : DistINObject

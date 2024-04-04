@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DistIN.Application.Controllers
 {
-    [Route("distan")]
+    //[Route("distan")]
     public class DistANController : DistINController
     {
 
@@ -12,7 +12,7 @@ namespace DistIN.Application.Controllers
         {
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
 
-            if (!string.IsNullOrEmpty(identity) || !identity.Contains('@'))
+            if (string.IsNullOrEmpty(identity) || !identity.Contains('@'))
                 return StatusCode(StatusCodes.Status401Unauthorized);
 
             string domain = identity.Split('@')[1];
@@ -37,9 +37,6 @@ namespace DistIN.Application.Controllers
                 return StatusCode(StatusCodes.Status401Unauthorized);
 
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
-            DistANMessage? msg = getRequestObject<DistANMessage>();
-            if (msg == null)
-                return StatusCode(StatusCodes.Status400BadRequest);
 
             DistANMessageList result = new DistANMessageList();
             result.Messages = Database.Messages.Where(string.Format("[Recipient]='{0}'", identity));

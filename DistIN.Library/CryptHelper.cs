@@ -5,6 +5,8 @@ using Org.BouncyCastle.Pqc.Crypto.Falcon;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
 using System.Reflection.Emit;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 namespace DistIN
 {
@@ -173,5 +175,50 @@ namespace DistIN
             }
         }
 
+
+        public static string GenerateAndEncryptKyberAESKey(string publicKey, out byte[] aesKey)
+        {
+            List<byte[]> key = DecodeKey(publicKey);
+            KyberPublicKeyParameters pk = new KyberPublicKeyParameters(KyberParameters.kyber1024, key[0], key[1]);
+
+            var kemGenerator = new KyberKemGenerator(new SecureRandom());
+            var secretWithEncapsulation = kemGenerator.GenerateEncapsulated(pk);
+            aesKey = secretWithEncapsulation.GetSecret();
+
+            return EncodeUrlBase64(secretWithEncapsulation.GetEncapsulation());
+        }
+
+        public static byte[] DecryptKyberAESKey(string privateKey, string encryptedAESKey)
+        {
+            List<byte[]> key = DecodeKey(privateKey);
+
+            KyberPrivateKeyParameters sk =new KyberPrivateKeyParameters(KyberParameters.kyber1024, key[0], key[1], key[2], key[3], key[4]);
+
+            var kemExtractor = new KyberKemExtractor(sk);
+            return kemExtractor.ExtractSecret(DecodeUrlBase64(encryptedAESKey));
+        }
+
+        public static byte[] EncryptAES(byte[] data, byte[] keyBytes)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.KeySize = keyBytes.Length * 8;
+                aes.IV = new byte[aes.IV.Length];
+                aes.Key = keyBytes;
+
+                return aes.CreateEncryptor().TransformFinalBlock(data, 0, data.Length);
+            }
+        }
+        public static byte[] DecryptAES(byte[] data, byte[] keyBytes)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.KeySize = keyBytes.Length * 8;
+                aes.IV = new byte[aes.IV.Length];
+                aes.Key = keyBytes;
+
+                return aes.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
+            }
+        }
     }
 }
