@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DistIN.DistAN;
+using System.Diagnostics;
+using System.Runtime.Serialization.Formatters;
 
 namespace TestApp_A
 {
@@ -22,6 +24,7 @@ namespace TestApp_A
 
         private DistINKeyPair keyPair;
         private Random random = new Random();
+        private Stopwatch stopwatch = new Stopwatch();
 
         public App()
         {
@@ -43,26 +46,98 @@ namespace TestApp_A
 
             string recipient = "demo1@192.168.1.202:5157";
 
-            for (int i = 0; i < 100; i++)
+            int[] sizes = new int[] 
+            { 
+                1024, 
+                128 * 1024,
+                512 * 1024,
+                640 * 1024,
+                1024 * 1024,
+                2 * 1024 * 1024,
+                4 * 1024 * 1024
+            };
+            string[] sizeStrings = new string[]
             {
-                testRequest(servicePublicKey, recipient, 1024);
+                "1 KiB",
+                "128 KiB",
+                "512 KiB",
+                "640 KiB",
+                "1 MiB",
+                "2 MiB",
+                "4 MiB"
+            };
+
+            int samples = 100;
+
+            List<double[]> results = new List<double[]>();
+            string csvFile = "/srv/distana/results.csv";
+            FileStream fs = new FileStream(csvFile, FileMode.Create);
+            StreamWriter writer = new StreamWriter(fs);
+            writer.WriteLine("datasize,ms");
+
+            for(int s =0;s<sizes.Length;s++)
+            {
+                int size = sizes[s];
+                string sizeString = sizeStrings[s];
+
+                double min = 10000;
+                double max = 0;
+                double average = 0;
+                for (int i = 0; i < samples; i++)
+                {
+                    double ms = testRequest(i, servicePublicKey, recipient, size);
+
+                    min = Math.Min(min, ms);
+                    max = Math.Max(max, ms);
+                    average += ms;
+
+                    writer.WriteLine(string.Format("{0},{1:0}", sizeString, ms));
+                    writer.Flush();
+                }
+                average /= samples;
+
+                double median = (min + max) / 2;
+
+
+                //writer.WriteLine(string.Format("{0:0},{1:0},{2:0},{3:0},{4:0}", s, min, max, average, median));
+                //writer.Flush();
+
+                results.Add(new double[] { size, min, max, average, median });
+            }
+
+            fs.Flush();
+            fs.Close();
+            fs.Dispose();
+
+            Console.WriteLine("====================================================");
+            foreach (double[] res in results)
+            {
+                Console.WriteLine("data size:        {0:0} bytes", res[0]);
+                Console.WriteLine("roundtime min:    {0:0} ms", res[1]);
+                Console.WriteLine("roundtime max:    {0:0} ms", res[2]);
+                Console.WriteLine("roundtime avg:    {0:0} ms", res[3]);
+                Console.WriteLine("roundtime med:    {0:0} ms", res[4]);
+                Console.WriteLine("----------------------------------------------------");
             }
         }
 
-        private void testRequest(DistINPublicKey servicePublicKey, string recipient, int dataSize)
+        private double testRequest(int sample, DistINPublicKey servicePublicKey, string recipient, int dataSize)
         {
-            Console.WriteLine("get DistINMessagingKey...");
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            //Console.WriteLine("get DistINMessagingKey...");
             string recipientPublicMsgKey = DistINClient.GetAttributeByName("demo1@192.168.1.202:5157", "DistINMessagingKey").Result.Result!.Value;
 
-            Console.WriteLine("generate message...");
+            //Console.WriteLine("generate message...");
             byte[] data = new byte[dataSize];
             random.NextBytes(data);
 
             DistANMessage msg = DistANMessage.CreateMessage(identity, recipient, recipientPublicMsgKey, data);
-            Console.WriteLine("post message...");
+            //Console.WriteLine("post message...");
             DistINClient.PostMessage(msg).Wait();
 
-            Console.WriteLine("wait for response...");
+            //Console.WriteLine("wait for response...");
             DistANMessage? message = null;
             while (message == null)
             {
@@ -74,8 +149,10 @@ namespace TestApp_A
                     Thread.Sleep(INTERVAL_MS);
             }
 
-            Console.WriteLine("validate response...");
+            //Console.WriteLine("validate response...");
             byte[] responseData = message.GetDecryptedMessage(privateMsgKey);
+            stopwatch.Stop();
+
             responseData = responseData.Reverse().ToArray();
 
             bool isCorrect = responseData.Length == dataSize;
@@ -87,7 +164,12 @@ namespace TestApp_A
                 }
             }
 
-            Console.WriteLine("verification: {0}", isCorrect);
+            //Console.WriteLine("verification: {0}", isCorrect);
+
+            double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
+            Console.WriteLine("datasize: {0:0}    sample: {1}    roundtime: {2:0} ms    valid: {3}", dataSize, sample, elapsedMS, isCorrect);
+
+            return elapsedMS;
         }
 
         public void Dispose()
