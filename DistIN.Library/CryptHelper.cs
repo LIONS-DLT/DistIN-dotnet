@@ -7,6 +7,7 @@ using Org.BouncyCastle.Utilities;
 using System.Reflection.Emit;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace DistIN
 {
@@ -206,7 +207,20 @@ namespace DistIN
                 aes.IV = new byte[aes.IV.Length];
                 aes.Key = keyBytes;
 
-                return aes.CreateEncryptor().TransformFinalBlock(data, 0, data.Length);
+
+                ICryptoTransform encryptor = aes.CreateEncryptor();
+                byte[] encryptedBytes;
+                using (var stream = new System.IO.MemoryStream())
+                {
+                    using (var cryptoStream = new CryptoStream(stream, encryptor, CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0, data.Length);
+                    }
+                    encryptedBytes = stream.ToArray();
+                }
+                return encryptedBytes;
+
+                //return aes.CreateEncryptor().TransformFinalBlock(data, 0, data.Length);
             }
         }
         public static byte[] DecryptAES(byte[] data, byte[] keyBytes)
@@ -217,7 +231,22 @@ namespace DistIN
                 aes.IV = new byte[aes.IV.Length];
                 aes.Key = keyBytes;
 
-                return aes.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
+                ICryptoTransform decryptor = aes.CreateDecryptor();
+                byte[] decryptedBytes;
+                using (var stream = new System.IO.MemoryStream(data))
+                {
+                    using (var cryptoStream = new CryptoStream(stream, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (var msPlain = new System.IO.MemoryStream())
+                        {
+                            cryptoStream.CopyTo(msPlain);
+                            decryptedBytes = msPlain.ToArray();
+                        }
+                    }
+                }
+                return decryptedBytes;
+
+                //return aes.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
             }
         }
     }

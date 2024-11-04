@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DistIN.DistAN;
 using System.Diagnostics;
 using System.Runtime.Serialization.Formatters;
+using System.Drawing;
 
 namespace TestApp_A
 {
@@ -48,26 +49,27 @@ namespace TestApp_A
 
             int[] sizes = new int[] 
             { 
-                1024, 
+                1024,
                 128 * 1024,
+                256 * 1024,
                 512 * 1024,
-                640 * 1024,
                 1024 * 1024,
-                2 * 1024 * 1024,
-                4 * 1024 * 1024
+                2 * 1024 * 1024
             };
             string[] sizeStrings = new string[]
             {
                 "1 KiB",
                 "128 KiB",
+                "256 KiB",
                 "512 KiB",
-                "640 KiB",
                 "1 MiB",
-                "2 MiB",
-                "4 MiB"
+                "2 MiB"
             };
 
             int samples = 100;
+
+
+            testRequest(0, servicePublicKey, recipient, sizes[0]);
 
             List<double[]> results = new List<double[]>();
             string csvFile = "/srv/distana/results.csv";
@@ -75,12 +77,19 @@ namespace TestApp_A
             StreamWriter writer = new StreamWriter(fs);
             writer.WriteLine("datasize,ms");
 
-            for(int s =0;s<sizes.Length;s++)
+            string csvFile_sum = "/srv/distana/results_sum.csv";
+            FileStream fs_sum = new FileStream(csvFile_sum, FileMode.Create);
+            StreamWriter writer_sum = new StreamWriter(fs_sum);
+
+            writer_sum.WriteLine("ROUNDTRIP");
+            writer_sum.WriteLine("datasize,min,avg,max");
+
+            for (int s =0;s<sizes.Length;s++)
             {
                 int size = sizes[s];
                 string sizeString = sizeStrings[s];
 
-                double min = 10000;
+                double min = 1000000;
                 double max = 0;
                 double average = 0;
                 for (int i = 0; i < samples; i++)
@@ -102,6 +111,9 @@ namespace TestApp_A
                 //writer.WriteLine(string.Format("{0:0},{1:0},{2:0},{3:0},{4:0}", s, min, max, average, median));
                 //writer.Flush();
 
+                writer_sum.WriteLine(string.Format("{0},{1:0},{2:0},{3:0}", sizeString, min, average, max));
+                writer_sum.Flush();
+
                 results.Add(new double[] { size, min, max, average, median });
             }
 
@@ -119,6 +131,111 @@ namespace TestApp_A
                 Console.WriteLine("roundtime med:    {0:0} ms", res[4]);
                 Console.WriteLine("----------------------------------------------------");
             }
+
+            writer_sum.WriteLine("ENCRYPT");
+            writer_sum.WriteLine("datasize,min,avg,max");
+
+            for (int s = 0; s < sizes.Length; s++)
+            {
+                int size = sizes[s];
+                string sizeString = sizeStrings[s];
+
+                double min = 1000000;
+                double max = 0;
+                double average = 0;
+                for (int i = 0; i < samples; i++)
+                {
+                    double ms = testEncrypt(i, recipient, size);
+
+                    min = Math.Min(min, ms);
+                    max = Math.Max(max, ms);
+                    average += ms;
+                }
+                average /= samples;
+                writer_sum.WriteLine(string.Format("{0},{1:0},{2:0},{3:0}", sizeString, min, average, max));
+                writer_sum.Flush();
+            }
+
+
+            writer_sum.WriteLine("DECRYPT");
+            writer_sum.WriteLine("datasize,min,avg,max");
+
+            for (int s = 0; s < sizes.Length; s++)
+            {
+                int size = sizes[s];
+                string sizeString = sizeStrings[s];
+
+                double min = 1000000;
+                double max = 0;
+                double average = 0;
+                for (int i = 0; i < samples; i++)
+                {
+                    double ms = testDecrypt(i, recipient, size);
+
+                    min = Math.Min(min, ms);
+                    max = Math.Max(max, ms);
+                    average += ms;
+                }
+                average /= samples;
+                writer_sum.WriteLine(string.Format("{0},{1:0},{2:0},{3:0}", sizeString, min, average, max));
+                writer_sum.Flush();
+            }
+
+
+            writer_sum.WriteLine("SIGN");
+            writer_sum.WriteLine("datasize,min,avg,max");
+
+            for (int s = 0; s < sizes.Length; s++)
+            {
+                int size = sizes[s];
+                string sizeString = sizeStrings[s];
+
+                double min = 1000000;
+                double max = 0;
+                double average = 0;
+                for (int i = 0; i < samples; i++)
+                {
+                    double ms = testSign(i, size);
+
+                    min = Math.Min(min, ms);
+                    max = Math.Max(max, ms);
+                    average += ms;
+                }
+                average /= samples;
+                writer_sum.WriteLine(string.Format("{0},{1:0},{2:0},{3:0}", sizeString, min, average, max));
+                writer_sum.Flush();
+            }
+
+
+            writer_sum.WriteLine("VERIFY");
+            writer_sum.WriteLine("datasize,min,avg,max");
+
+            for (int s = 0; s < sizes.Length; s++)
+            {
+                int size = sizes[s];
+                string sizeString = sizeStrings[s];
+
+                double min = 1000000;
+                double max = 0;
+                double average = 0;
+                for (int i = 0; i < samples; i++)
+                {
+                    double ms = testVerify(i, size);
+
+                    min = Math.Min(min, ms);
+                    max = Math.Max(max, ms);
+                    average += ms;
+                }
+                average /= samples;
+                writer_sum.WriteLine(string.Format("{0},{1:0},{2:0},{3:0}", sizeString, min, average, max));
+                writer_sum.Flush();
+            }
+
+
+            fs_sum.Flush();
+            fs_sum.Close();
+            fs_sum.Dispose();
+
         }
 
         private double testRequest(int sample, DistINPublicKey servicePublicKey, string recipient, int dataSize)
@@ -127,7 +244,7 @@ namespace TestApp_A
             stopwatch.Start();
 
             //Console.WriteLine("get DistINMessagingKey...");
-            string recipientPublicMsgKey = DistINClient.GetAttributeByName("demo1@192.168.1.202:5157", "DistINMessagingKey").Result.Result!.Value;
+            string recipientPublicMsgKey = DistINClient.GetAttributeByName(recipient, "DistINMessagingKey").Result.Result!.Value;
 
             //Console.WriteLine("generate message...");
             byte[] data = new byte[dataSize];
@@ -168,6 +285,78 @@ namespace TestApp_A
 
             double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
             Console.WriteLine("datasize: {0:0}    sample: {1}    roundtime: {2:0} ms    valid: {3}", dataSize, sample, elapsedMS, isCorrect);
+
+            return elapsedMS;
+        }
+
+        private double testEncrypt(int sample, string recipient, int dataSize)
+        {
+            string recipientPublicMsgKey = DistINClient.GetAttributeByName(recipient, "DistINMessagingKey").Result.Result!.Value;
+
+            byte[] data = new byte[dataSize];
+            random.NextBytes(data);
+
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            DistANMessage msg = DistANMessage.CreateMessage(identity, recipient, recipientPublicMsgKey, data);
+
+            stopwatch.Stop();
+            double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
+            Console.WriteLine("datasize: {0:0}    sample: {1}    enc_time: {2:0} ms", dataSize, sample, elapsedMS);
+
+            return elapsedMS;
+        }
+        private double testDecrypt(int sample, string recipient, int dataSize)
+        {
+            byte[] data = new byte[dataSize];
+            random.NextBytes(data);
+
+
+            DistANMessage msg = DistANMessage.CreateMessage(identity, recipient, publicMsgKey, data);
+
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            msg.GetDecryptedMessage(privateMsgKey);
+
+            stopwatch.Stop();
+            double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
+            Console.WriteLine("datasize: {0:0}    sample: {1}    dec_time: {2:0} ms", dataSize, sample, elapsedMS);
+
+            return elapsedMS;
+        }
+        private double testSign(int sample, int dataSize)
+        {
+            byte[] data = new byte[dataSize];
+            random.NextBytes(data);
+
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            string signature = CryptHelper.SignData(keyPair, data);
+
+            stopwatch.Stop();
+            double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
+            Console.WriteLine("datasize: {0:0}    sample: {1}    sig_time: {2:0} ms", dataSize, sample, elapsedMS);
+
+            return elapsedMS;
+        }
+        private double testVerify(int sample, int dataSize)
+        {
+            byte[] data = new byte[dataSize];
+            random.NextBytes(data);
+
+            string signature = CryptHelper.SignData(keyPair, data);
+
+            stopwatch.Reset();
+            stopwatch.Start();
+
+            bool valid = CryptHelper.VerifySinature(DistINKeyAlgorithm.DILITHIUM, publicKey, signature, data);
+
+            stopwatch.Stop();
+            double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
+            Console.WriteLine("datasize: {0:0}    sample: {1}    ver_time: {2:0} ms", dataSize, sample, elapsedMS);
 
             return elapsedMS;
         }
