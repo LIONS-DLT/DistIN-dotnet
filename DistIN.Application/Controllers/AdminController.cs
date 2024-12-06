@@ -8,5 +8,14 @@ namespace DistIN.Application.Controllers
         {
             return View();
         }
+
+        public IActionResult RegisterIdentity()
+        {
+            return View();
+        }
+        public IActionResult StartRegistration(string id)
+        {
+            return View();
+        }
     }
 }

@@ -24,7 +24,7 @@ namespace DistIN.Application
                 // database seed
                 Database.PublicKeys.Insert(new DistINPublicKey()
                 {
-                    Identity = "root@" + AppConfig.Current.ServiceDomain,
+                    Identity = IDHelper.IDToIdentity("root"),
                     Algorithm = AppConfig.Current.ServiceKeyPair.Algorithm,
                     Key = AppConfig.Current.ServiceKeyPair.PublicKey,
                     Date = DateTime.Now,

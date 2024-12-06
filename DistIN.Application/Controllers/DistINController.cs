@@ -84,14 +84,14 @@ namespace DistIN.Application.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest);
 
             id = id.ToLower();
-            string identity = id + "@" + AppConfig.Current.ServiceDomain;
+            string identity = IDHelper.IDToIdentity(id);
 
             if (!string.IsNullOrEmpty(date))
             {
                 DateTime dateTime = DateTime.Parse(date);
                 DistINPublicKey? key = Database.PublicKeys.Where(
                     string.Format("Identity='{0}' AND [Date]<{1} ORDER BY [Date] DESC",
-                    identity, dateTime.Ticks)).FirstOrDefault();
+                    identity.ToSqlSafeValue(), dateTime.Ticks)).FirstOrDefault();
                 if (key == null)
                     return StatusCode(StatusCodes.Status404NotFound);
                 return getSignedObjectResult(key);
@@ -99,7 +99,7 @@ namespace DistIN.Application.Controllers
             else
             {
                 DistINPublicKey? key = Database.PublicKeys.Where(
-                    string.Format("Identity='{0}' ORDER BY [Date] DESC", identity)).FirstOrDefault();
+                    string.Format("Identity='{0}' ORDER BY [Date] DESC", identity.ToSqlSafeValue())).FirstOrDefault();
                 if (key == null)
                     return StatusCode(StatusCodes.Status404NotFound);
                 return getSignedObjectResult(key);
@@ -112,7 +112,7 @@ namespace DistIN.Application.Controllers
             if (string.IsNullOrEmpty(id))
                 return StatusCode(StatusCodes.Status400BadRequest);
 
-            string identity = id + "@" + AppConfig.Current.ServiceDomain;
+            string identity = IDHelper.IDToIdentity(id);
 
             if (!string.IsNullOrEmpty(attributeId))
             {
@@ -124,7 +124,7 @@ namespace DistIN.Application.Controllers
             }
             else if(!string.IsNullOrEmpty(attributeName))
             {
-                DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity, attributeName)).FirstOrDefault();
+                DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), attributeName.ToSqlSafeValue())).FirstOrDefault();
                 if(attribute == null)
                     return StatusCode(StatusCodes.Status404NotFound);
                 if(!attribute.IsPublic)
@@ -190,7 +190,7 @@ namespace DistIN.Application.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest);
 
             DistINSignatureRequest request = new DistINSignatureRequest();
-            request.Identity = id + "@" + AppConfig.Current.ServiceDomain;
+            request.Identity = IDHelper.IDToIdentity(id);
             request.RemoteAddress = this.HttpContext.Connection.RemoteIpAddress!.ToString();
             request.Caption = caption ?? string.Empty;
             request.Challenge = challenge ?? string.Empty;
@@ -264,7 +264,7 @@ namespace DistIN.Application.Controllers
             if (challange == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
 
-            string identity = id + "@" + AppConfig.Current.ServiceDomain;
+            string identity = IDHelper.IDToIdentity(id);
             DistINPublicKey publicKey = AppCache.GetPublicKey(identity);
             if (challange == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
@@ -273,7 +273,7 @@ namespace DistIN.Application.Controllers
                 return StatusCode(StatusCodes.Status401Unauthorized);
 
             DistINCredentialContent tokenContent = new DistINCredentialContent();
-            tokenContent.Issuer = "root@" + AppConfig.Current.ServiceDomain;
+            tokenContent.Issuer = IDHelper.IDToIdentity("root");
             tokenContent.Subject = identity;
             tokenContent.IssuanceDate = DateTime.Now;
             tokenContent.Type = "distin-token";
@@ -300,7 +300,7 @@ namespace DistIN.Application.Controllers
             if (challange == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
 
-            string identity = registrationData.ID + "@" + AppConfig.Current.ServiceDomain;
+            string identity = IDHelper.IDToIdentity(registrationData.ID);
             DistINPublicKey publicKey = registrationData.PublicKey;
 
             if (!CryptHelper.VerifySinature(publicKey, registrationData.Signature, Encoding.UTF8.GetBytes(challange)))
@@ -309,7 +309,7 @@ namespace DistIN.Application.Controllers
             Database.PublicKeys.Insert(publicKey);
 
             DistINCredentialContent tokenContent = new DistINCredentialContent();
-            tokenContent.Issuer = "root@" + AppConfig.Current.ServiceDomain;
+            tokenContent.Issuer = IDHelper.IDToIdentity("root");
             tokenContent.Subject = identity;
             tokenContent.IssuanceDate = DateTime.Now;
             tokenContent.Type = "distin-token";

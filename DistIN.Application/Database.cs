@@ -12,7 +12,7 @@ namespace DistIN.Application
 {
     public static class Database
     {
-        public static DatabaseEntitySet<DistINIdentity> Identities { get; private set; } = new DatabaseEntitySet<DistINIdentity>();
+        //public static DatabaseEntitySet<DistINIdentity> Identities { get; private set; } = new DatabaseEntitySet<DistINIdentity>();
         public static DatabaseEntitySet<DistINAttribute> Attributes { get; private set; } = new DatabaseEntitySet<DistINAttribute>();
         public static DatabaseEntitySet<DistINAttributeSignature> AttributeSignatures { get; private set; } = new DatabaseEntitySet<DistINAttributeSignature>();
         public static DatabaseEntitySet<DistINAttributeSignatureReference> AttributeSignatureRefs { get; private set; } = new DatabaseEntitySet<DistINAttributeSignatureReference>();
@@ -309,6 +309,10 @@ namespace DistIN.Application
         }
         public T? Find(string id)
         {
+            if (!string.IsNullOrEmpty(id))
+                return null;
+            else
+                id = id.ToSqlSafeValue();
             return Database.QueryObjects<T>(string.Format("ID='{0}'", id)).FirstOrDefault();
         }
         public List<T> All()
@@ -331,6 +335,11 @@ namespace DistIN.Application
 
         public bool Delete(string id)
         {
+            if (!string.IsNullOrEmpty(id))
+                return false;
+            else
+                id = id.ToSqlSafeValue();
+
             Type type = typeof(T);
 
             StringBuilder sql = new StringBuilder();

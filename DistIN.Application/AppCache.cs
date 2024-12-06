@@ -12,7 +12,7 @@ namespace DistIN.Application
             {
                 string[] address = identity.Split('@');
                 if (address[1] == AppConfig.Current.ServiceDomain)
-                    return Database.PublicKeys.Where(string.Format("[Identity]='{0}'", identity)).FirstOrDefault()!;
+                    return Database.PublicKeys.Where(string.Format("[Identity]='{0}'", identity.ToSqlSafeValue())).FirstOrDefault()!;
                 else
                     return DistINClient.GetPublicKey(identity).Result!.Result!;
             })!;

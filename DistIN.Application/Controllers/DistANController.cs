@@ -39,7 +39,7 @@ namespace DistIN.Application.Controllers
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
 
             DistANMessageList result = new DistANMessageList();
-            result.Messages = Database.Messages.Where(string.Format("[Recipient]='{0}'", identity));
+            result.Messages = Database.Messages.Where(string.Format("[Recipient]='{0}'", identity.ToSqlSafeValue()));
 
             foreach (DistANMessage m in result.Messages)
                 Database.Messages.Delete(m.ID);
