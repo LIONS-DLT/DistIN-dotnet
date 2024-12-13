@@ -12,6 +12,15 @@ namespace DistIN
         public string PrivateKey { get; set; } = string.Empty;
         public string PublicKey { get; set; } = string.Empty;
         public DistINKeyAlgorithm Algorithm { get; set; } = DistINKeyAlgorithm.DILITHIUM;
+
+        public static DistINKeyPair Generate()
+        {
+            return CryptHelper.GenerateKeyPair(DistINKeyAlgorithm.DILITHIUM);
+        }
+        public static DistINKeyPair Generate(DistINKeyAlgorithm algorithm)
+        {
+            return CryptHelper.GenerateKeyPair(algorithm);
+        }
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]

@@ -7,6 +7,7 @@ namespace DistIN.Application
 {
     public static class AppInit
     {
+        public static bool IsFirstStart { get; set; } = false;
         public static string AppDataPath { get; private set; } = string.Empty;
         public static string ProductName { get; private set; } = "DistIN";
 
@@ -31,7 +32,9 @@ namespace DistIN.Application
                     Signature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, Encoding.UTF8.GetBytes(AppConfig.Current.ServiceKeyPair.PublicKey)),
                 });
 
-                demoSeed();
+                IsFirstStart = true;
+
+                //demoSeed();
             });
             //Blockchain.Init();
         }

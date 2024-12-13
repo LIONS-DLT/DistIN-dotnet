@@ -249,5 +249,32 @@ namespace DistIN
                 //return aes.CreateDecryptor().TransformFinalBlock(data, 0, data.Length);
             }
         }
+
+        public static byte[] GenerateAES(int keySize = 256)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.KeySize = keySize;
+                aes.GenerateKey();
+                return aes.Key;
+            }
+        }
+
+        public static byte[] CalculateHash_256(byte[] bytes)
+        {
+            using (SHA256 sha = SHA256.Create())
+            {
+                byte[] hash = sha.ComputeHash(bytes);
+                return hash;
+            }
+        }
+        public static byte[] CalculateHash_512(byte[] bytes)
+        {
+            using (SHA512 sha = SHA512.Create())
+            {
+                byte[] hash = sha.ComputeHash(bytes);
+                return hash;
+            }
+        }
     }
 }

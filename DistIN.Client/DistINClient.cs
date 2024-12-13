@@ -13,6 +13,40 @@ namespace DistIN.Client
         private static DistINPublicKey? publicKey = null;
         private static string? token = null;
 
+        public static async Task<DistINResponse<DistINSignatureResponse>?> RequestAuthentication(string id, string challenge, string? caption, IEnumerable<string>? requiredAttributes = null, IEnumerable<string>? preferredAttributes = null)
+        {
+            string? requiredAttributesString = null;
+            string? preferredAttributesString = null;
+
+            if(requiredAttributes != null)
+                requiredAttributesString = string.Join(",", requiredAttributes);
+            if (preferredAttributes != null)
+                preferredAttributesString = string.Join(",", preferredAttributes);
+
+            return await RequestAuthentication(id, challenge, caption, requiredAttributesString, preferredAttributesString);
+        }
+        public static async Task<DistINResponse<DistINSignatureResponse>?> RequestAuthentication(string id, string challenge, string? caption, string? requiredAttributes, string? preferredAttributes)
+        {
+            DistINPublicKey publicKey = GetPublicKey(id).Result.Result!;
+
+            string[] address = id.Split('@');
+
+            string url = constructUrl(address[1], "authenticate", "id", address[0], "challenge", challenge);
+            if (!string.IsNullOrEmpty(caption))
+                url += "?caption=" + Uri.EscapeDataString(caption);
+            if (!string.IsNullOrEmpty(requiredAttributes))
+                url += "?requiredAttributes=" + Uri.EscapeDataString(requiredAttributes);
+            if (!string.IsNullOrEmpty(preferredAttributes))
+                url += "?preferredAttributes=" + Uri.EscapeDataString(preferredAttributes);
+            DistINResponse<DistINSignatureResponse> response = await requestObject<DistINSignatureResponse>(address[1], url);
+            bool success = CryptHelper.VerifySinature(publicKey, response.Result!.Signature, Encoding.UTF8.GetBytes(challenge));
+
+            if (success)
+                return response;
+            else
+                return null;
+        }
+
         public static async Task<DistINResponse<DistINPublicKey>> GetPublicKey(string id)
         {
             string[] address = id.Split('@');
@@ -124,6 +158,30 @@ namespace DistIN.Client
             return true;
         }
 
+
+        public static async Task<DistINResponse<DistINSignatureRequestList>> GetSignatureRequests()
+        {
+            if (publicKey == null)
+                throw new Exception("auth data missing.");
+
+            string[] address = publicKey.Identity.Split('@');
+
+            string url = constructUrl(address[1], "signatureRequests");
+            return await requestObject<DistINSignatureRequestList>(true, address[1], url);
+        }
+        public static async Task<DistINResponse<DistINSignatureResponse>> PostSignatureResponse(DistINSignatureResponse response)
+        {
+            if (publicKey == null)
+                throw new Exception("auth data missing.");
+
+            string[] address = publicKey.Identity.Split('@');
+
+            string url = constructUrl(address[1], "signatureResponse");
+            return await postObject<DistINSignatureResponse, DistINSignatureResponse>(true, address[1], url, response);
+        }
+
+
+
         public static async Task<DistINResponse<DistANMessageList>> GetMessages()
         {
             if (publicKey == null)
@@ -152,6 +210,10 @@ namespace DistIN.Client
         private static string constructDistANUrl(string domain, string action, string parameterName, string parameterValue)
         {
             return string.Format("{0}{1}/distan/{2}?{3}={4}", SCHEME, domain, action, parameterName, Uri.EscapeDataString(parameterValue));
+        }
+        private static string constructUrl(string domain, string action)
+        {
+            return string.Format("{0}{1}/distin/{2}", SCHEME, domain, action);
         }
         private static string constructUrl(string domain, string action, string parameterName, string parameterValue)
         {
@@ -246,5 +308,7 @@ namespace DistIN.Client
                 return response;
             }
         }
+
+
     }
 }

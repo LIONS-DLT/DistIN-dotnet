@@ -2,6 +2,7 @@
 {
     public static class LoginRequestCache
     {
+        private static List<string> _idsToRegister = new List<string>();
         private static Dictionary<string, string> _cache = new Dictionary<string, string>();
 
         private static void cleanUp()
@@ -33,6 +34,31 @@
                 string challange = _cache[identity];
                 _cache.Remove(identity);
                 return challange;
+            }
+        }
+
+        public static void AddIdForRegistration(string identity)
+        {
+            lock (_idsToRegister)
+            {
+                if(!_idsToRegister.Contains(identity))
+                    _idsToRegister.Add(identity);
+            }
+        }
+
+        public static bool HasIdForRegistration(string identity)
+        {
+            lock (_idsToRegister)
+            {
+                return _idsToRegister.Contains(identity);
+            }
+        }
+        public static void RemoveIdForRegistration(string identity)
+        {
+            lock (_idsToRegister)
+            {
+                if (_idsToRegister.Contains(identity))
+                    _idsToRegister.Remove(identity);
             }
         }
     }

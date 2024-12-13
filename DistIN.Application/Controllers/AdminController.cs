@@ -15,6 +15,18 @@ namespace DistIN.Application.Controllers
         }
         public IActionResult StartRegistration(string id)
         {
+            string identity = IDHelper.IDToIdentity(id);
+            LoginRequestCache.AddIdForRegistration(identity);
+
+            // TODO: generate QR
+
+            return View();
+        }
+        public IActionResult CancelRegistration(string id)
+        {
+            string identity = IDHelper.IDToIdentity(id);
+            LoginRequestCache.RemoveIdForRegistration(identity);
+
             return View();
         }
     }

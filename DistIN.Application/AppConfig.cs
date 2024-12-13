@@ -10,10 +10,12 @@
 
         public DistINKeyPair ServiceKeyPair { get; set; } = new DistINKeyPair();
 
-        public string EthereumUrl { get; set; } = string.Empty;
-        public string EthereumPrivateKey { get; set; } = string.Empty;
-        public string EthereumContractAddressDocs { get; set; } = string.Empty;
-        public string EthereumContractAddressSigns { get; set; } = string.Empty;
+        public bool AllowBlindRegistration { get; set; } = false;
+
+        //public string EthereumUrl { get; set; } = string.Empty;
+        //public string EthereumPrivateKey { get; set; } = string.Empty;
+        //public string EthereumContractAddressDocs { get; set; } = string.Empty;
+        //public string EthereumContractAddressSigns { get; set; } = string.Empty;
 
 
         public static void Init()

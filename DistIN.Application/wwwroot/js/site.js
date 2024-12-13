@@ -3,6 +3,19 @@
 
 // Write your JavaScript code.
 
-function executeLogin(inputId) {
+function executeLogin(buttonId, inputId) {
 
+    $(buttonId).prop("disabled", true);
+
+    $.post('/Home/Login', { id: $(inputId).val() }, function (data) {
+
+        $(buttonId).prop("disabled", false);
+
+        if (data.success) {
+            document.location.href = '/App/Index';
+        }
+        else {
+            alert(data.reason);
+        }
+    });
 }

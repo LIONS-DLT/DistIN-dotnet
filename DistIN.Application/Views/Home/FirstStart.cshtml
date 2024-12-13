@@ -1,0 +1,22 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<div class="text-center">
+    <h1>CONFIGURE INSTANCE</h1>
+    <h4>address/domain</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <form action="@Url.Action("FirstStartContinue","Home")">
+                <label>Instance address/domain</label>
+                <div class="input-group mb-3">
+                    <input type="text" name="domain" class="form-control" placeholder="id.example.org" aria-label="ID" aria-describedby="button-addon2">
+                    <button class="btn btn-outline-primary" type="submit" id="button-addon2"><i class="bi bi-arrow-right"></i> Continue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

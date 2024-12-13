@@ -11,8 +11,8 @@
         <div class="col-lg-6 offset-lg-3">
             <form action="">
                 <div class="input-group mb-3">
-                    <input type="email" class="form-control" placeholder="@IDHelper.IDToIdentity("user")" aria-label="ID" aria-describedby="button-addon2">
-                    <button class="btn btn-outline-primary" type="submit" id="button-addon2"><i class="bi bi-box-arrow-in-right"></i> Sign in</button>
+                    <input type="email" class="form-control" placeholder="@IDHelper.IDToIdentity("user")" aria-label="ID" aria-describedby="btn-login" id="inp-login">
+                    <button onclick="executeLogin('#btn-login','#inp-login')" class="btn btn-outline-primary" type="submit" id="btn-login"><i class="bi bi-box-arrow-in-right"></i> Sign in</button>
                 </div>
             </form>
         </div>

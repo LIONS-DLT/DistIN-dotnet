@@ -2,23 +2,89 @@
 {
     public partial class MainPage : ContentPage
     {
-        int count = 0;
+        private List<Button> buttons = new List<Button>();
 
         public MainPage()
         {
             InitializeComponent();
+            loadList();
         }
 
-        private void OnCounterClicked(object sender, EventArgs e)
+        private void loadList()
         {
-            count++;
+            foreach (Button button in buttons)
+                layout.Remove(button);
+            buttons.Clear();
 
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
+            foreach (string id in IdentityMaterial.GetLocalIDs())
+            {
+                var btn = new Button()
+                {
+                    Text = id,
+                    HorizontalOptions = LayoutOptions.Fill,
+                    Style = App.FindResource("EntryButton") as Style
+                };
+                btn.Clicked += (object sender, EventArgs e) =>
+                {
+                    OnIdClicked(id);
+                };
+                layout.Add(btn);
+            }
+        }
 
-            SemanticScreenReader.Announce(CounterBtn.Text);
+        private void OnIdClicked(string id)
+        {
+            App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal("Password:", (string pswd) =>
+            {
+                if (string.IsNullOrEmpty(pswd))
+                    return;
+
+                IdentityMaterial material = IdentityMaterial.Open(id, pswd);
+
+                App.Current.MainPage.Navigation.PushAsync(new IdentityPage(material));
+            }));
+        }
+
+        private void OnScanClicked(object sender, EventArgs e)
+        {
+            App.Current.MainPage.Navigation.PushModalAsync(new ScanQrModal((string content) =>
+            {
+                if (string.IsNullOrEmpty(content))
+                    return;
+
+                // create:id:challenge
+
+                string[] parameters = content.Split('|');
+
+                if (parameters[0] == "create") // create and register id
+                {
+                    string id = parameters[1];
+
+                    App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal(string.Format( "Password for '{0}':", id), (string pswd) =>
+                    {
+                        if (string.IsNullOrEmpty(pswd))
+                            return;
+
+                        App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal("Repeat password:", (string pswd2) =>
+                        {
+                            if (pswd2 != pswd)
+                                return;
+
+                            IdentityMaterial material = IdentityMaterial.Create(id, DistINKeyAlgorithm.DILITHIUM, pswd);
+
+                            bool success = DistIN.Client.DistINClient.Register(material.ID, material.KeyPair).Result;
+
+                            if (success)
+                                loadList();
+                        }));
+                    }));
+                }
+                else if (parameters[0] == "???") // ???
+                {
+
+                }
+
+            }));
         }
     }
 }

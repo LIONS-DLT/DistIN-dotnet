@@ -1,6 +1,9 @@
 ﻿using DistIN.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Org.BouncyCastle.Asn1.Cmp;
+using System.ComponentModel.DataAnnotations;
+using System;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -46,7 +49,7 @@ namespace DistIN.Application.Controllers
             return true;
         }
 
-        protected T? getRequestObject<T>() where T : DistINObject
+        protected T? getRequestObject<T>(bool checkSignature = true) where T : DistINObject
         {
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
             string signature = this.HttpContext.Request.Headers["DistIN-Signature"];
@@ -64,10 +67,13 @@ namespace DistIN.Application.Controllers
             while (bytesRead < length)
                 bytesRead += this.Request.Body.Read(data, bytesRead, length - bytesRead);
 
-            DistINPublicKey publicKey = AppCache.GetPublicKey(identity);
+            if (checkSignature)
+            {
+                DistINPublicKey publicKey = AppCache.GetPublicKey(identity);
 
-            if (!CryptHelper.VerifySinature(publicKey, signature, data))
-                return null;
+                if (!CryptHelper.VerifySinature(publicKey, signature, data))
+                    return null;
+            }
 
             return DistINObject.FromJsonString<T>(Encoding.UTF8.GetString(data));
             //return this.Request.ReadFromJsonAsync<T>(DistINObject.JsonSerializerOptions).Result!;
@@ -189,9 +195,51 @@ namespace DistIN.Application.Controllers
             if (string.IsNullOrEmpty(challenge))
                 return StatusCode(StatusCodes.Status400BadRequest);
 
+            //DistINSignatureRequest request = new DistINSignatureRequest();
+            //request.Identity = IDHelper.IDToIdentity(id);
+            //request.RemoteAddress = this.HttpContext.Connection.RemoteIpAddress!.ToString();
+            //request.Caption = caption ?? string.Empty;
+            //request.Challenge = challenge ?? string.Empty;
+
+            //if (!string.IsNullOrEmpty(requiredAttributes))
+            //{
+            //    foreach (string a in requiredAttributes.Split(new char[] { ',', ';', '|' }))
+            //    {
+            //        request.RequiredAttributes.Add(a);
+            //    }
+            //}
+            //if (!string.IsNullOrEmpty(preferredAttributes))
+            //{
+            //    foreach (string a in preferredAttributes.Split(new char[] { ',', ';', '|' }))
+            //    {
+            //        request.PreferredAttributes.Add(a);
+            //    }
+            //}
+
+            //DateTime timeout = DateTime.Now.AddMinutes(10);
+
+            //AuthRequestCache.AddRequest(request, timeout);
+            //DistINSignatureResponse? response = null;
+
+            //while(response == null && timeout < DateTime.Now)
+            //{
+            //    Thread.Sleep(1000);
+            //    response = AuthRequestCache.GetAndRemoveResponse(request.ID);
+            //}
+
+            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, challenge, caption, requiredAttributes, preferredAttributes);
+
+            if (response == null)
+                return StatusCode(StatusCodes.Status419AuthenticationTimeout);
+
+            return getSignedObjectResult(response);
+        }
+
+        public static DistINSignatureResponse? performAuthenticationRequest(HttpContext httpContext, string id, string challenge, string? caption, string? requiredAttributes, string? preferredAttributes)
+        {
             DistINSignatureRequest request = new DistINSignatureRequest();
             request.Identity = IDHelper.IDToIdentity(id);
-            request.RemoteAddress = this.HttpContext.Connection.RemoteIpAddress!.ToString();
+            request.RemoteAddress = httpContext.Connection.RemoteIpAddress!.ToString();
             request.Caption = caption ?? string.Empty;
             request.Challenge = challenge ?? string.Empty;
 
@@ -215,18 +263,13 @@ namespace DistIN.Application.Controllers
             AuthRequestCache.AddRequest(request, timeout);
             DistINSignatureResponse? response = null;
 
-            while(response == null && timeout < DateTime.Now)
+            while (response == null && timeout > DateTime.Now)
             {
                 Thread.Sleep(1000);
                 response = AuthRequestCache.GetAndRemoveResponse(request.ID);
             }
-
-            if(response == null)
-                return StatusCode(StatusCodes.Status419AuthenticationTimeout);
-
-            return getSignedObjectResult(response);
+            return response;
         }
-
 
         [HttpPost]
         public IActionResult SignatureResponse()
@@ -239,7 +282,7 @@ namespace DistIN.Application.Controllers
 
             AuthRequestCache.AddResponse(response);
 
-            return StatusCode(StatusCodes.Status200OK);
+            return getSignedObjectResult(response);
         }
 
 
@@ -292,9 +335,13 @@ namespace DistIN.Application.Controllers
         [HttpPost]
         public IActionResult Register()
         {
-            DistINRegistrationData? registrationData = getRequestObject<DistINRegistrationData>();
+            DistINRegistrationData? registrationData = getRequestObject<DistINRegistrationData>(false);
             if (registrationData == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
+
+            if (!AppConfig.Current.AllowBlindRegistration && !LoginRequestCache.HasIdForRegistration(registrationData.PublicKey.Identity))
+                return StatusCode(StatusCodes.Status403Forbidden);
+
 
             string? challange = LoginRequestCache.GetChallange(registrationData.ID);
             if (challange == null)
@@ -307,6 +354,7 @@ namespace DistIN.Application.Controllers
                 return StatusCode(StatusCodes.Status401Unauthorized);
 
             Database.PublicKeys.Insert(publicKey);
+            LoginRequestCache.RemoveIdForRegistration(registrationData.PublicKey.Identity);
 
             DistINCredentialContent tokenContent = new DistINCredentialContent();
             tokenContent.Issuer = IDHelper.IDToIdentity("root");

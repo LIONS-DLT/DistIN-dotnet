@@ -1,9 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="DistIN.Authenticator.MainPage"
-             Title="Identities">
-
+             x:Class="DistIN.Authenticator.SignPage"
+             Title="SignPage">
     <ScrollView>
         <VerticalStackLayout
             x:Name="layout"
@@ -12,12 +11,16 @@
             VerticalOptions="Center">
 
             <Button
-                Text="Scan QR"
-                Clicked="OnScanClicked"
+                Text="Sign / Accept"
+                Clicked="OnAcceptClick"
+                Padding="20"
+                HorizontalOptions="Fill" />
+            <Button
+                Text="Cancel / Decline"
+                Clicked="OnDeclineClick"
                 Padding="20"
                 HorizontalOptions="Fill" />
 
         </VerticalStackLayout>
     </ScrollView>
-
 </ContentPage>
