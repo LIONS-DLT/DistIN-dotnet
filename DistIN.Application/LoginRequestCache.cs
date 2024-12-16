@@ -11,28 +11,28 @@
                 _cache.Remove(_cache.Keys.First());
         }
 
-        public static string CreateChallange(string identity)
+        public static string CreateChallange(string challangeId)
         {
             lock( _cache )
             {
                 cleanUp();
-                if (_cache.ContainsKey(identity))
-                    _cache.Remove(identity);
+                if (_cache.ContainsKey(challangeId))
+                    _cache.Remove(challangeId);
 
                 string challange = IDGenerator.GenerateRandomString(32);
-                _cache.Add(identity, challange);
+                _cache.Add(challangeId, challange);
                 return challange;
             }
         }
 
-        public static string? GetChallange(string identity)
+        public static string? GetChallange(string challangeId)
         {
             lock( _cache )
             {
-                if (!_cache.ContainsKey(identity))
+                if (!_cache.ContainsKey(challangeId))
                     return null;
-                string challange = _cache[identity];
-                _cache.Remove(identity);
+                string challange = _cache[challangeId];
+                _cache.Remove(challangeId);
                 return challange;
             }
         }

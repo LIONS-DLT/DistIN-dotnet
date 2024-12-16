@@ -127,7 +127,12 @@ namespace DistIN.Client
             return true;
         }
 
-        public static async Task<bool> Register(string identity, DistINKeyPair keys)
+
+        public static async Task<bool> RegisterBlind(string identity, DistINKeyPair keys)
+        {
+            return await Register(identity, "", "", keys);
+        }
+        public static async Task<bool> Register(string identity, string registrationId, string registrationChallange, DistINKeyPair keys)
         {
             keyPair = keys;
             publicKey = new DistINPublicKey()
@@ -139,16 +144,24 @@ namespace DistIN.Client
                 Signature = CryptHelper.SignData(keys, Encoding.UTF8.GetBytes(keys.PublicKey)),
             };
 
-            DistINResponse<DistINLoginChallange> challangeResponse = await getAuthChallange(identity);
-            if (challangeResponse.Result == null)
-                return false;
+            if (string.IsNullOrEmpty(registrationId))
+            {
+                string[] address = identity.Split('@');
 
-            string challange = challangeResponse.Result.Challange;
+                string url = constructUrl(address[1], "registrationRequest", "id", address[0]);
+                DistINResponse<DistINLoginChallange> challangeResponse = await requestObject<DistINLoginChallange>(address[1], url);
+
+                if (challangeResponse.Result == null)
+                    return false;
+
+                registrationId = challangeResponse.Result.ID;
+                registrationChallange = challangeResponse.Result.Challange;
+            }
 
             DistINRegistrationData registrationData = new DistINRegistrationData();
-            registrationData.ID = challangeResponse.Result.ID;
+            registrationData.ID = registrationId;
             registrationData.PublicKey = publicKey;
-            registrationData.Signature = CryptHelper.SignData(keyPair, Encoding.UTF8.GetBytes(challange));
+            registrationData.Signature = CryptHelper.SignData(keyPair, Encoding.UTF8.GetBytes(registrationChallange));
 
             DistINResponse<DistINCredential> loginResponse = await register(identity, registrationData);
             if (loginResponse.Result == null)
@@ -182,14 +195,14 @@ namespace DistIN.Client
 
 
 
-        public static async Task<DistINResponse<DistANMessageList>> GetMessages()
+        public static async Task<DistINResponse<DistANMessageList>> GetMessages(string appId)
         {
             if (publicKey == null)
                 throw new Exception("auth data missing.");
 
             string[] address = publicKey.Identity.Split('@');
 
-            string url = constructDistANUrl(address[1], "messages");
+            string url = constructDistANUrl(address[1], "messages", "appId", appId);
             return await requestObject<DistANMessageList>(true, address[1], url);
         }
 

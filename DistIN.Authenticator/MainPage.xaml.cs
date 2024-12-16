@@ -59,6 +59,8 @@
                 if (parameters[0] == "create") // create and register id
                 {
                     string id = parameters[1];
+                    string regId = parameters[2];
+                    string regChallange = parameters[3];
 
                     App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal(string.Format( "Password for '{0}':", id), (string pswd) =>
                     {
@@ -72,7 +74,7 @@
 
                             IdentityMaterial material = IdentityMaterial.Create(id, DistINKeyAlgorithm.DILITHIUM, pswd);
 
-                            bool success = DistIN.Client.DistINClient.Register(material.ID, material.KeyPair).Result;
+                            bool success = DistIN.Client.DistINClient.Register(material.ID, regId, regChallange, material.KeyPair).Result;
 
                             if (success)
                                 loadList();

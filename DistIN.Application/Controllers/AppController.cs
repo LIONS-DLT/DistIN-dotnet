@@ -4,6 +4,7 @@ using System.Text;
 
 namespace DistIN.Application.Controllers
 {
+    [LoginRequired]
     public class AppController : Controller
     {
         public IActionResult Index()
@@ -11,50 +12,76 @@ namespace DistIN.Application.Controllers
             return View();
         }
 
-        //[HttpPost]
-        //public IActionResult Login(string id)
-        //{
-        //    string identity = IDHelper.IDToIdentity(id);
-        //    DistINPublicKey? publicKey = Database.PublicKeys.Where(string.Format("[Identity]='{0}'", identity.ToSqlSafeValue())).FirstOrDefault();
-        //    if(publicKey == null)
-        //    {
-        //        return Json(new { success = false, reason = "Unknown ID." });
-        //    }
+        public IActionResult Attributes()
+        {
+            List<DistINAttribute> attributes = Database.Attributes.Where(string.Format("[Identity]='{0}'", this.HttpContext.GetIdentity()));
 
-        //    DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", id.ToSqlSafeValue(), "admin")).FirstOrDefault();
-        //    bool isAdmin = attribute != null && attribute.Value.ToLower() == "true";
+            return View(attributes);
+        }
+
+        public IActionResult Attribute(string id)
+        {
+            DistINAttribute? attribute = Database.Attributes.Find(id);
+            if(attribute != null && attribute.Identity != this.HttpContext.GetIdentity())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
+            if(attribute == null)
+            {
+                attribute = new DistINAttribute();
+                attribute.Identity = this.HttpContext.GetIdentity();
+                attribute.MimeType = DistINMimeTypes.TEXT;
+            }
+
+            return View(attribute);
+        }
+
+        public IActionResult ApplyAttribute(DistINAttribute attr)
+        {
+            DistINAttribute? attribute = Database.Attributes.Find(attr.ID);
+            if (attribute == null)
+                attribute = attr;
+
+            if (attribute.Identity != this.HttpContext.GetIdentity())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
+            Database.Attributes.InsertOrUpdate(attribute);
+            return RedirectToAction("Attributes", "App");
+        }
+
+        public IActionResult DeleteAttribute(string id)
+        {
+            DistINAttribute? attribute = Database.Attributes.Find(id);
+            if (attribute == null)
+                return StatusCode(StatusCodes.Status404NotFound);
+
+            if (attribute.Identity != this.HttpContext.GetIdentity())
+                return StatusCode(StatusCodes.Status403Forbidden);
 
 
-        //    DistINSignatureRequest signatureRequest = new DistINSignatureRequest()
-        //    {
-        //        Caption = "Login",
-        //        Identity = identity,
-        //        RemoteAddress = "",
-        //        Challenge = IDGenerator.GenerateRandomString(128)
-        //    };
+            Database.Attributes.Delete(attribute.ID);
 
-        //    DateTime timeout = DateTime.Now.AddMinutes(3);
+            return RedirectToAction("Attributes", "App");
+        }
 
-        //    AuthRequestCache.AddRequest(signatureRequest, timeout);
-        //    DistINSignatureResponse? response = null;
+        public IActionResult AttributeSignatures()
+        {
+            List<DistINAttributeSignature> signatures = Database.AttributeSignatures.Where(string.Format("[Signer]='{0}'", this.HttpContext.GetIdentity()));
+            return View(signatures);
+        }
 
-        //    while (response == null && timeout < DateTime.Now)
-        //    {
-        //        Thread.Sleep(1000);
-        //        response = AuthRequestCache.GetAndRemoveResponse(signatureRequest.ID);
-        //    }
+        public IActionResult RevokeAttributeSignature(string id)
+        {
+            DistINAttributeSignature? signature = Database.AttributeSignatures.Find(id);
 
-        //    if (response == null)
-        //        return Json(new { success = false, reason = "Authentication timed out." });
+            if (signature == null)
+                return StatusCode(StatusCodes.Status404NotFound);
 
-        //    bool isValid = CryptHelper.VerifySinature(publicKey, response.Signature, Encoding.UTF8.GetBytes(signatureRequest.Challenge));
+            if (signature.Signer != this.HttpContext.GetIdentity())
+                return StatusCode(StatusCodes.Status403Forbidden);
 
-        //    if (!isValid)
-        //        return Json(new { success = false, reason = "Invalid authentication signature." });
+            Database.AttributeSignatures.Delete(id);
 
-        //    this.HttpContext.Login(identity, isAdmin);
-
-        //    return Json(new { success = true, reason = "Valid." });
-        //}
+            return RedirectToAction("AttributeSignatures", "App");
+        }
     }
 }

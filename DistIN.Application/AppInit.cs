@@ -62,7 +62,7 @@ namespace DistIN.Application
                 DistINAttribute attribute = new DistINAttribute()
                 {
                     Identity = id.Identity,
-                    MimeType = "text/plain",
+                    MimeType = DistINMimeTypes.TEXT,
                     Name = "DistINMessagingKey",
                     Value = mpk.PublicKey,
                     IsPublic = true,

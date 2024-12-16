@@ -48,7 +48,7 @@ namespace TestApp_B
 
             while (true)
             {
-                var result = DistINClient.GetMessages().Result;
+                var result = DistINClient.GetMessages("test").Result;
                 bool verificationResult = result.Verify(servicePublicKey);
 
                 List<DistANMessage> messages = result.Result!.Messages;
@@ -61,7 +61,7 @@ namespace TestApp_B
 
                     string senderPublicMsgKey = DistINClient.GetAttributeByName(message.Sender, "DistINMessagingKey").Result.Result!.Value;
 
-                    DistANMessage response = DistANMessage.CreateMessage(identity, message.Sender, senderPublicMsgKey, data);
+                    DistANMessage response = DistANMessage.CreateMessage("test", identity, message.Sender, senderPublicMsgKey, data);
 
                     DistINClient.PostMessage(response).Wait();
                 }

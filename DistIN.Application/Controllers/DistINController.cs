@@ -126,6 +126,8 @@ namespace DistIN.Application.Controllers
                 if(attribute.Identity != identity)
                     return StatusCode(StatusCodes.Status400BadRequest);
 
+                attribute.SignatureReferences = Database.AttributeSignatureRefs.Where(string.Format("[Attribute]='{0}'", attribute.ID));
+
                 return getSignedObjectResult(attribute);
             }
             else if(!string.IsNullOrEmpty(attributeName))
@@ -135,6 +137,8 @@ namespace DistIN.Application.Controllers
                     return StatusCode(StatusCodes.Status404NotFound);
                 if(!attribute.IsPublic)
                     return StatusCode(StatusCodes.Status404NotFound);
+
+                attribute.SignatureReferences = Database.AttributeSignatureRefs.Where(string.Format("[Attribute]='{0}'", attribute.ID));
 
                 return getSignedObjectResult(attribute);
             }
@@ -290,6 +294,11 @@ namespace DistIN.Application.Controllers
         [HttpPost]
         public IActionResult LoginRequest(string id)
         {
+            string identity = IDHelper.IDToIdentity(id);
+            DistINPublicKey? publicKey = Database.PublicKeys.Where(string.Format("[Identity]='{0}'", identity.ToSqlSafeValue())).FirstOrDefault();
+            if(publicKey == null)
+                return StatusCode(StatusCodes.Status400BadRequest);
+
             DistINLoginChallange challange = new DistINLoginChallange();
             challange.Challange = LoginRequestCache.CreateChallange(challange.ID)!;
             return getSignedObjectResult(challange);
@@ -331,6 +340,20 @@ namespace DistIN.Application.Controllers
             return getSignedObjectResult(token);
         }
 
+
+        [HttpGet]
+        [HttpPost]
+        public IActionResult RegistrationRequest(string id)
+        {
+            if (!AppConfig.Current.AllowBlindRegistration)
+                return StatusCode(StatusCodes.Status403Forbidden);
+
+            DistINLoginChallange challange = new DistINLoginChallange();
+            challange.Challange = LoginRequestCache.CreateChallange(challange.ID)!;
+            return getSignedObjectResult(challange);
+        }
+
+
         [HttpGet]
         [HttpPost]
         public IActionResult Register()
@@ -347,7 +370,6 @@ namespace DistIN.Application.Controllers
             if (challange == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
 
-            string identity = IDHelper.IDToIdentity(registrationData.ID);
             DistINPublicKey publicKey = registrationData.PublicKey;
 
             if (!CryptHelper.VerifySinature(publicKey, registrationData.Signature, Encoding.UTF8.GetBytes(challange)))
@@ -358,7 +380,7 @@ namespace DistIN.Application.Controllers
 
             DistINCredentialContent tokenContent = new DistINCredentialContent();
             tokenContent.Issuer = IDHelper.IDToIdentity("root");
-            tokenContent.Subject = identity;
+            tokenContent.Subject = registrationData.PublicKey.Identity;
             tokenContent.IssuanceDate = DateTime.Now;
             tokenContent.Type = "distin-token";
             tokenContent.ExpirationDate = DateTime.Now.AddDays(100);

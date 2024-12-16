@@ -10,6 +10,22 @@ namespace DistIN.Application
             return value.Replace("'", "");
         }
 
+        public static string GetValuePreview(this DistINAttribute attribute)
+        {
+            if (string.IsNullOrEmpty(attribute.Value))
+                return "n/a";
+            if (!attribute.MimeType.StartsWith("text"))
+                return "...";
+            if (attribute.Value.StartsWith('{') || attribute.Value.StartsWith('<'))
+                return "...";
+
+            string value = attribute.Value.Split('\n')[0].Trim();
+            if (value.Length > 15)
+                value = value.Substring(0, 10) + "...";
+            return value;
+        }
+
+
         #region SESSION_EXTENSIONS
 
         public static bool IsLoggedIn(this HttpContext context)
@@ -19,6 +35,10 @@ namespace DistIN.Application
         public static bool IsLoggedInAdmin(this HttpContext context)
         {
             return !string.IsNullOrEmpty(context.Session.GetString("identity")) && context.Session.GetInt32("admin")! > 0;
+        }
+        public static string GetIdentity(this HttpContext context)
+        {
+            return context.Session.GetString("identity")!;
         }
         public static void Login(this HttpContext context, string identity, bool admin)
         {

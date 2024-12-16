@@ -1,0 +1,20 @@
+﻿
+@{
+}
+
+<div class="text-center">
+    <h1>REGISTER IDENTITY</h1>
+    <h4>identity name</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <form action="@Url.Action("StartRegistration","Admin")">
+                <label>New Identity</label>
+                <div class="input-group mb-3">
+                    <input type="text" name="id" class="form-control" placeholder="user@id.example.org" aria-label="ID" aria-describedby="button-addon2">
+                    <button class="btn btn-outline-primary" type="submit" id="button-addon2"><i class="bi bi-arrow-right"></i> Start Registration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

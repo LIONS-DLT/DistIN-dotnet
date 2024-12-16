@@ -1,0 +1,23 @@
+﻿@using DistIN
+
+@{
+}
+
+<div class="text-center">
+    <h1>DASHBOARD</h1>
+    <h4>@Context.GetIdentity()</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+
+            <div class="mb-3">
+                <a href="@Url.Action("Attributes", "App")" class="btn btn-outline-primary d-block w-100">Attributes</a>
+            </div>
+
+            <div class="mb-3">
+                <a href="@Url.Action("AttributeSignatures", "App")" class="btn btn-outline-primary d-block w-100">Attribute Signatures</a>
+            </div>
+
+        </div>
+    </div>
+</div>

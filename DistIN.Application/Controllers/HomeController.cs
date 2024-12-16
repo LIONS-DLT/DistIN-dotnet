@@ -25,6 +25,10 @@ namespace DistIN.Application.Controllers
             {
                 return RedirectToAction("FirstStart", "Home");
             }
+            else if (this.HttpContext.IsLoggedIn())
+            {
+                return RedirectToAction("Index", "App");
+            }
             return View();
         }
         public IActionResult Login(string id)
@@ -57,6 +61,13 @@ namespace DistIN.Application.Controllers
             return Json(new { success = true, reason = "Valid." });
         }
 
+        public IActionResult Logout()
+        {
+            this.HttpContext.Logout();
+
+            return RedirectToAction("Index", "Home");
+        }
+
         public IActionResult FirstStart()
         {
             if (!AppInit.IsFirstStart)
@@ -76,8 +87,11 @@ namespace DistIN.Application.Controllers
             string identity = IDHelper.IDToIdentity("admin");
             LoginRequestCache.AddIdForRegistration(identity);
 
+            string challangeId = IDGenerator.GenerateGUID();
+            string challangeCode = LoginRequestCache.CreateChallange(challangeId);
+
             ViewData["domain"] = domain;
-            ViewData["qrcontent"] = "create|" + identity;
+            ViewData["qrcontent"] = "create|" + identity + "|" + challangeId + "|" + challangeCode;
 
             return View();
         }
@@ -94,9 +108,18 @@ namespace DistIN.Application.Controllers
                 attribute.Identity = IDHelper.IDToIdentity("admin");
                 attribute.Name = "admin";
                 attribute.Value = "true";
-                attribute.MimeType = "text/plain";
+                attribute.MimeType = DistINMimeTypes.TEXT;
                 attribute.IsPublic = false;
                 
+                Database.Attributes.Insert(attribute);
+
+                attribute = new DistINAttribute();
+                attribute.Identity = IDHelper.IDToIdentity("admin");
+                attribute.Name = "DistINRole";
+                attribute.Value = "Identity";
+                attribute.MimeType = DistINMimeTypes.TEXT;
+                attribute.IsPublic = true;
+
                 Database.Attributes.Insert(attribute);
 
                 return RedirectToAction("Index", "Home");

@@ -15,7 +15,7 @@ namespace DistIN.Application.Controllers
             if (string.IsNullOrEmpty(identity) || !identity.Contains('@'))
                 return StatusCode(StatusCodes.Status401Unauthorized);
 
-            string domain = identity.Split('@')[1];
+            // string domain = identity.Split('@')[1];
 
             DistANMessage? msg = getRequestObject<DistANMessage>();
             if (msg == null || string.IsNullOrEmpty(msg.Recipient) || !msg.Recipient.Contains('@') || identity != msg.Sender || msg.Recipient.Split('@')[1] != AppConfig.Current.ServiceDomain)
@@ -31,7 +31,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
-        public IActionResult Messages()
+        public IActionResult Messages(string appId)
         {
             if (!checkToken())
                 return StatusCode(StatusCodes.Status401Unauthorized);
@@ -39,7 +39,7 @@ namespace DistIN.Application.Controllers
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
 
             DistANMessageList result = new DistANMessageList();
-            result.Messages = Database.Messages.Where(string.Format("[Recipient]='{0}'", identity.ToSqlSafeValue()));
+            result.Messages = Database.Messages.Where(string.Format("[Recipient]='{0}' AND [AppID]='{1}'", identity.ToSqlSafeValue(), appId.ToSqlSafeValue()));
 
             foreach (DistANMessage m in result.Messages)
                 Database.Messages.Delete(m.ID);

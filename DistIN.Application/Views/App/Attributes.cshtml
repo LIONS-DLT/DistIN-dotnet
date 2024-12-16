@@ -1,0 +1,39 @@
+﻿@using DistIN
+
+@model List<DistINAttribute>
+
+@{
+}
+
+<div class="text-center">
+    <h1>ATTRIBUTES</h1>
+    <h4>@Context.GetIdentity()</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Attribute</th>
+                        <th>Mime Type</th>
+                        <th>Public</th>
+                        <th>Value</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (DistINAttribute attr in Model)
+                    {
+                        <tr>
+                            <td>@attr.Name</td>
+                            <td>@attr.MimeType</td>
+                            <td>@((attr.IsPublic ? "Yes" : "No"))</td>
+                            <td>@attr.GetValuePreview()</td>
+                            <td><a href="@Url.Action("Attribute","App", new { id = attr.ID })">edit</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

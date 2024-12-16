@@ -250,7 +250,7 @@ namespace TestApp_A
             byte[] data = new byte[dataSize];
             random.NextBytes(data);
 
-            DistANMessage msg = DistANMessage.CreateMessage(identity, recipient, recipientPublicMsgKey, data);
+            DistANMessage msg = DistANMessage.CreateMessage("test", identity, recipient, recipientPublicMsgKey, data);
             //Console.WriteLine("post message...");
             DistINClient.PostMessage(msg).Wait();
 
@@ -258,7 +258,7 @@ namespace TestApp_A
             DistANMessage? message = null;
             while (message == null)
             {
-                var result = DistINClient.GetMessages().Result;
+                var result = DistINClient.GetMessages("test").Result;
                 bool verificationResult = result.Verify(servicePublicKey);
 
                 message = result.Result!.Messages.FirstOrDefault();
@@ -299,7 +299,7 @@ namespace TestApp_A
             stopwatch.Reset();
             stopwatch.Start();
 
-            DistANMessage msg = DistANMessage.CreateMessage(identity, recipient, recipientPublicMsgKey, data);
+            DistANMessage msg = DistANMessage.CreateMessage("test", identity, recipient, recipientPublicMsgKey, data);
 
             stopwatch.Stop();
             double elapsedMS = stopwatch.Elapsed.TotalMilliseconds;
@@ -313,7 +313,7 @@ namespace TestApp_A
             random.NextBytes(data);
 
 
-            DistANMessage msg = DistANMessage.CreateMessage(identity, recipient, publicMsgKey, data);
+            DistANMessage msg = DistANMessage.CreateMessage("test", identity, recipient, publicMsgKey, data);
 
             stopwatch.Reset();
             stopwatch.Start();

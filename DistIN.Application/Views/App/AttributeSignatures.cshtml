@@ -1,0 +1,35 @@
+﻿@using DistIN
+
+@model List<DistINAttributeSignature>
+
+@{
+}
+
+<div class="text-center">
+    <h1>ATTRIBUTE SIGNATURES</h1>
+    <h4>@Context.GetIdentity()</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Identity</th>
+                        <th>Attribute</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (DistINAttributeSignature sign in Model)
+                    {
+                        <tr>
+                            <td>@sign.Identity</td>
+                            <td>@sign.Attribute</td>
+                            <td><a href="@Url.Action("RevokeAttributeSignature","App", new { id = sign.ID })">revoke</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

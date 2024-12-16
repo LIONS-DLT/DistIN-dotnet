@@ -1,0 +1,23 @@
+﻿
+@{
+}
+
+<div class="text-center">
+    <h1>ADMIN DASHBOARD</h1>
+    <h4>@Context.GetIdentity()</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+
+            <div class="mb-3">
+                <a href="@Url.Action("Identities", "Admin")" class="btn btn-outline-primary d-block w-100">Identities</a>
+            </div>
+
+            <div class="mb-3">
+                <a href="@Url.Action("RegisterIdentity", "Admin")" class="btn btn-outline-primary d-block w-100">Register Identity</a>
+            </div>
+
+
+        </div>
+    </div>
+</div>

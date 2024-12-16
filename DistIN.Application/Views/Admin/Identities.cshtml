@@ -1,0 +1,35 @@
+﻿@using DistIN
+
+@model List<DistINPublicKey>
+
+@{
+}
+
+<div class="text-center">
+    <h1>IDENTITIES</h1>
+    <h4>@Context.GetIdentity()</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Identity</th>
+                        <th>Date</th>
+                        <th>Public Key</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (DistINPublicKey publicKey in Model.OrderBy(pk => pk.Identity))
+                    {
+                        <tr>
+                            <td>@publicKey.Identity</td>
+                            <td>@publicKey.Date.ToShortDateString()</td>
+                            <td>@publicKey.Key</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

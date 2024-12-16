@@ -1,12 +1,12 @@
 ﻿
 @{
-    string domain = (string)ViewData["domain"]!;
+    string id = (string)ViewData["id"]!;
     string qrcontent = (string)ViewData["qrcontent"]!;
 }
 
 <div class="text-center">
-    <h1>CONFIGURE INSTANCE</h1>
-    <h4>register admin authenticator</h4>
+    <h1>REGISTER IDENTITY</h1>
+    <h4>connect authenticator</h4>
     <br />
     <div class="row">
         <div class="col-lg-6 offset-lg-3">
@@ -14,7 +14,7 @@
                 <img src="@Url.Action("QR", "Home", new { qrcontent = qrcontent})" width="256" height="256" style="width:256px;height:auto" />
             </div>
             <div class="mb-3">
-                <a href="@Url.Action("FirstStartConfirm", "Home", new { domain = domain})" class="btn btn-primary" type="submit" ><i class="bi bi-check-circle"></i> Finish</a>
+                <a href="@Url.Action("FinishRegistration", "Admin", new { id = id})" class="btn btn-primary" type="submit"><i class="bi bi-check-circle"></i> Finish</a>
             </div>
         </div>
     </div>

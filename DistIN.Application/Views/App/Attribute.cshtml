@@ -1,0 +1,75 @@
+﻿@using DistIN
+
+@model DistINAttribute
+
+@{
+}
+
+<div class="text-center">
+    <h1>ATTRIBUTE</h1>
+    <h4>@Context.GetIdentity()</h4>
+    <br />
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <form action="@Url.Action("ApplyAttribute","App")">
+                <input type="hidden" name="id" value="@Model.ID">
+                <input type="hidden" name="identity" value="@Model.Identity">
+                
+                <div class="mb-3">
+                    <label>Name</label>
+                    <input type="text" list="attributeNames" class="form-control" placeholder="attributeName" name="name" value="@Model.Name">
+
+                    <datalist id="attributeNames">
+                        @foreach(string name in DistINAttribute.KnownAttributeNames)
+                        {
+                            <option value="@name"></option>
+                        }
+                    </datalist>
+
+                </div>
+                <div class="mb-3">
+                    <label>Mime Type</label>
+                    <select class="form-control" name="mimeType">
+                        @foreach (string mimeType in DistINMimeTypes.All())
+                        {
+                            if(Model.MimeType == mimeType)
+                            {
+                                <option value="@mimeType" selected>@mimeType</option>
+                            }
+                            else
+                            {
+                                <option value="@mimeType">@mimeType</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Mime Type</label>
+                    <select class="form-control" name="isPublic">
+                        @if (Model.IsPublic)
+                        {
+                            <option value="true" selected>Yes</option>
+                            <option value="false">No</option>
+                        }
+                        else
+                        {
+                            <option value="true">Yes</option>
+                            <option value="false" selected>No</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Value</label>
+                    <textarea type="text" class="form-control" placeholder="value" name="value" rows="5">@Model.Value</textarea>
+                </div>
+
+                <div class="input-group mb-3">
+                    <button type="submit" class="btn btn-primary d-block w-100"><i class="bi bi-floppy"></i> Save</button>
+                </div>
+            </form>
+            <div class="input-group mb-3">
+                <a href="@Url.Action("DeleteAttribute","App", new { id = Model.ID })" class="btn btn-outline-danger d-block w-100"><i class="bi bi-trash"></i> Delete</a>
+            </div>
+        </div>
+    </div>
+</div>

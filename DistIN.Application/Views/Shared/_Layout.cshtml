@@ -10,44 +10,22 @@
     <link rel="stylesheet" href="~/DistIN.Application.styles.css" asp-append-version="true" />
 </head>
 <body>
-    @*<header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">DistIN.Application</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2023 - DistIN.Application - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-
-    *@
 
     <div class="distin-menubar">
         <img class="distin-menubar-item" src="~/img/DistIN_Logo_1024x256px_2.png" />
-        <a href="#" class="distin-menubar-item"><i class="bi bi-house"></i> <span>Home</span></a>
+        <a href="@Url.Action("Index","Home")" class="distin-menubar-item"><i class="bi bi-house"></i> <span>Home</span></a>
+
+        @if (Context.IsLoggedInAdmin())
+        {
+            <a href="@Url.Action("Index","Admin")" class="distin-menubar-item"><i class="bi bi-people"></i> <span>Administration</span></a>
+        }
+
+        @if (Context.IsLoggedIn())
+        {
+            <a href="@Url.Action("Attributes","App")" class="distin-menubar-item"><i class="bi bi-card-list"></i> <span>Attributes</span></a>
+            <a href="@Url.Action("AttributeSignatures","App")" class="distin-menubar-item"><i class="bi bi-pen"></i> <span>Signatures</span></a>
+            <a href="@Url.Action("Logout","Home")" class="distin-menubar-item"><i class="bi bi-power"></i> <span>Log out</span></a>
+        }
     </div>
     <div class="distin-body">
         @RenderBody()
@@ -55,7 +33,6 @@
     <div class="distin-footer">
         @AppConfig.Current.ServiceDomain
     </div>
-
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
