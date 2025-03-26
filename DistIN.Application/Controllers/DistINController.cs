@@ -113,29 +113,28 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
-        public IActionResult Attribute(string id, string? attributeId, string? attributeName)
+        public IActionResult Attribute(string? id, string? attributeId, string? attributeName, string? token)
         {
-            if (string.IsNullOrEmpty(id))
-                return StatusCode(StatusCodes.Status400BadRequest);
-
-            string identity = IDHelper.IDToIdentity(id);
-
-            if (!string.IsNullOrEmpty(attributeId))
+            if (!string.IsNullOrEmpty(token))
             {
-                DistINAttribute attribute = Database.Attributes.Find(attributeId)!;
-                if(attribute.Identity != identity)
-                    return StatusCode(StatusCodes.Status400BadRequest);
+                DistINToken t = DistINToken.FromString(token);
+                DistINTokenPayload payload = t.GetPayload();
 
-                attribute.SignatureReferences = Database.AttributeSignatureRefs.Where(string.Format("[Attribute]='{0}'", attribute.ID));
+                string identity = payload.Subject.Split('>')[0];
+                attributeName = payload.Subject.Split('>')[1];
 
-                return getSignedObjectResult(attribute);
-            }
-            else if(!string.IsNullOrEmpty(attributeName))
-            {
-                DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), attributeName.ToSqlSafeValue())).FirstOrDefault();
-                if(attribute == null)
+                DistINPublicKey? key = Database.PublicKeys.Where(
+                    string.Format("Identity='{0}' AND [Date]<{1} ORDER BY [Date] DESC",
+                    identity.ToSqlSafeValue(), payload.GetIssuedAt().Ticks)).FirstOrDefault();
+                if (key == null)
                     return StatusCode(StatusCodes.Status404NotFound);
-                if(!attribute.IsPublic)
+
+                DistINTokenValidationResult validationResult = t.Validate(key);
+                if(validationResult != DistINTokenValidationResult.Success)
+                    return StatusCode(StatusCodes.Status401Unauthorized);
+
+                DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), attributeName.ToSqlSafeValue())).FirstOrDefault();
+                if (attribute == null)
                     return StatusCode(StatusCodes.Status404NotFound);
 
                 attribute.SignatureReferences = Database.AttributeSignatureRefs.Where(string.Format("[Attribute]='{0}'", attribute.ID));
@@ -144,7 +143,37 @@ namespace DistIN.Application.Controllers
             }
             else
             {
-                return StatusCode(StatusCodes.Status400BadRequest);
+                if (string.IsNullOrEmpty(id))
+                    return StatusCode(StatusCodes.Status400BadRequest);
+
+                string identity = IDHelper.IDToIdentity(id);
+
+                if (!string.IsNullOrEmpty(attributeId))
+                {
+                    DistINAttribute attribute = Database.Attributes.Find(attributeId)!;
+                    if (attribute.Identity != identity)
+                        return StatusCode(StatusCodes.Status400BadRequest);
+
+                    attribute.SignatureReferences = Database.AttributeSignatureRefs.Where(string.Format("[Attribute]='{0}'", attribute.ID));
+
+                    return getSignedObjectResult(attribute);
+                }
+                else if (!string.IsNullOrEmpty(attributeName))
+                {
+                    DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), attributeName.ToSqlSafeValue())).FirstOrDefault();
+                    if (attribute == null)
+                        return StatusCode(StatusCodes.Status404NotFound);
+                    if (!attribute.IsPublic)
+                        return StatusCode(StatusCodes.Status404NotFound);
+
+                    attribute.SignatureReferences = Database.AttributeSignatureRefs.Where(string.Format("[Attribute]='{0}'", attribute.ID));
+
+                    return getSignedObjectResult(attribute);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest);
+                }
             }
         }
 
