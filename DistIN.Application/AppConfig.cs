@@ -8,9 +8,11 @@
         public string ServiceDomain { get; set; } = "id.example.org";
         public DistINServiceVerificationType ServiceVerificationType { get; set; } = DistINServiceVerificationType.DNS;
 
-        public DistINKeyPair ServiceKeyPair { get; set; } = new DistINKeyPair();
+        public DistINKeyPair ServiceKeyPair { get; set; } = null;
 
         public bool AllowBlindRegistration { get; set; } = false;
+
+        public RSAKeyPair OpenID_RSA_KeyPair { get; set; } = null;
 
         //public string EthereumUrl { get; set; } = string.Empty;
         //public string EthereumPrivateKey { get; set; } = string.Empty;

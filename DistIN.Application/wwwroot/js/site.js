@@ -19,3 +19,21 @@ function executeLogin(buttonId, inputId) {
         }
     });
 }
+
+
+function executeAuth(buttonId, inputId) {
+
+    $(buttonId).prop("disabled", true);
+
+    $.post('/Home/Login', { id: $(inputId).val() }, function (data) {
+
+        $(buttonId).prop("disabled", false);
+
+        if (data.success) {
+            document.location.href = '/OpenID/ConfirmAuthorization';
+        }
+        else {
+            alert(data.reason);
+        }
+    });
+}

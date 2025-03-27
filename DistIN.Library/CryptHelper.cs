@@ -277,4 +277,32 @@ namespace DistIN
             }
         }
     }
+
+    public class RSAKeyPair
+    {
+        public string PrivateKey { get; set; } = string.Empty;
+        public string PublicKey { get; set;} = string.Empty;
+
+        public static RSAKeyPair Create()
+        {
+            using (var rsa = RSA.Create(512))
+            {
+                RSAKeyPair keyPair = new RSAKeyPair();
+
+                keyPair.PrivateKey = CryptHelper.EncodeUrlBase64(rsa.ExportRSAPrivateKey());
+                keyPair.PublicKey = CryptHelper.EncodeUrlBase64(rsa.ExportRSAPublicKey());
+
+                return keyPair;
+            }
+        }
+
+        public RSA GetRSA()
+        {
+            RSA rsa = RSA.Create();
+            rsa.ImportRSAPrivateKey(CryptHelper.DecodeUrlBase64(this.PrivateKey), out int b0);
+            rsa.ImportRSAPublicKey(CryptHelper.DecodeUrlBase64(this.PublicKey), out int b1);
+
+            return rsa;
+        }
+    }
 }

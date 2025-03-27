@@ -1,0 +1,22 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<div class="text-center">
+    <img src="~/img/DistIN_Logo_512px.png" style="max-width:90%" />
+    <br />
+    <h1>DISTRIBUTED IDENTITY<br />INFORMATION NETWORK</h1>
+    <br />
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <form action="">
+                <div class="input-group mb-3">
+                    <input type="email" class="form-control" placeholder="@IDHelper.IDToIdentity("user")" aria-label="ID" aria-describedby="btn-login" id="inp-login">
+                    <button onclick="executeAuth('#btn-login','#inp-login')" class="btn btn-outline-primary" type="submit" id="btn-login"><i class="bi bi-box-arrow-in-right"></i> Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

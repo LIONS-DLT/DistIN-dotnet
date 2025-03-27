@@ -19,6 +19,7 @@ namespace DistIN.Application
         public static DatabaseEntitySet<DistINCredential> Credentials { get; private set; } = new DatabaseEntitySet<DistINCredential>();
         public static DatabaseEntitySet<DistINPublicKey> PublicKeys { get; private set; } = new DatabaseEntitySet<DistINPublicKey>();
         public static DatabaseEntitySet<AppToken> Tokens { get; private set; } = new DatabaseEntitySet<AppToken>();
+        public static DatabaseEntitySet<OpenIDClient> OpenIDClients { get; private set; } = new DatabaseEntitySet<OpenIDClient>();
 
         // DistAN Enities
         public static DatabaseEntitySet<DistANMessage> Messages { get; private set; } = new DatabaseEntitySet<DistANMessage>();
