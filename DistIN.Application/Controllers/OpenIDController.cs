@@ -5,12 +5,14 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Collections.Concurrent;
 
 namespace DistIN.Application.Controllers
 {
     public class OpenIDController : Controller
     {
-        private static Dictionary<string, string> _authSessions = new Dictionary<string, string>();
+        private static ConcurrentDictionary<string, string> _authSessions = new ConcurrentDictionary<string, string>();
+        private static readonly ConcurrentDictionary<string, bool> _revokedTokens = new ConcurrentDictionary<string, bool>();
 
         [Route(".well-known/openid-configuration")]
         public IActionResult Config()
@@ -82,10 +84,7 @@ namespace DistIN.Application.Controllers
 
             string authCode = IDGenerator.GenerateGUID();
 
-            lock (_authSessions)
-            {
-                _authSessions.Add(authCode, identity);
-            }
+            _authSessions[authCode] = identity;
 
             if (redirect_uri.Contains('?'))
                 return Redirect($"{redirect_uri}&code={authCode}&state={state}");
@@ -107,8 +106,9 @@ namespace DistIN.Application.Controllers
                 return BadRequest(new { error = "invalid_client" });
             }
 
+            //string identity = _authSessions[code];
             string identity = _authSessions[code];
-            _authSessions.Remove(code);
+            _authSessions.TryRemove(code, out _);
 
             var idToken = generateJwtToken(identity, true, client_id);
             var accessToken = generateJwtToken(identity, false, client_id);
@@ -185,6 +185,9 @@ namespace DistIN.Application.Controllers
         {
             try
             {
+                if (_revokedTokens.ContainsKey(token))
+                    return null;
+
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var rsaKey = AppConfig.Current.OpenID_RSA_KeyPair.GetRSA();
 
@@ -221,11 +224,23 @@ namespace DistIN.Application.Controllers
 
             return Ok(new { message = "Logged out" });
         }
+
+        public IActionResult Revoke(
+            [FromForm] string token,
+            [FromForm] string token_type_hint,
+            [FromForm] string client_id,
+            [FromForm] string client_secret)
+        {
+            OpenIDClient? client = Database.OpenIDClients.Find(client_id);
+            if (client == null || client_secret != client.Secret)
+            {
+                return BadRequest(new { error = "invalid_client" });
+            }
+
+            _revokedTokens[token] = true;
+
+            return Ok();
+        }
     }
 
-    //public class OpenIDAuth
-    //{
-    //    public string Code { get; set; } = IDGenerator.GenerateGUID();
-    //    public string Identity { get; set; } = string.Empty;
-    //}
 }
