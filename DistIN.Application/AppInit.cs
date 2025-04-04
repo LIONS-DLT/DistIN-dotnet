@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Text;
+using DistIN.Application.DistNet;
 
 namespace DistIN.Application
 {
@@ -36,7 +37,10 @@ namespace DistIN.Application
 
                 //demoSeed();
             });
-            //Blockchain.Init();
+
+            Controllers.NodeController.InitNeighbours();
+
+            AsyncWorker.Init();
         }
 
         private static void demoSeed()
@@ -86,6 +90,8 @@ namespace DistIN.Application
             }));
         }
 
+
+
         public static void OnActionExecuting(Controller controller, ActionExecutingContext context)
         {
             // handle optional alert parameters
@@ -118,6 +124,56 @@ namespace DistIN.Application
 
             CultureInfo.CurrentCulture = culture;
             CultureInfo.CurrentUICulture = culture;
+        }
+
+        public static void RenewKey()
+        {
+            var oldKeyPair = AppConfig.Current.ServiceKeyPair;
+            AppConfig.Current.ServiceKeyPair = CryptHelper.GenerateKeyPair(DistINKeyAlgorithm.DILITHIUM);
+            Database.PublicKeys.Insert(new DistINPublicKey()
+            {
+                Identity = IDHelper.IDToIdentity("root"),
+                Algorithm = AppConfig.Current.ServiceKeyPair.Algorithm,
+                Key = AppConfig.Current.ServiceKeyPair.PublicKey,
+                Date = DateTime.Now,
+                Signature = CryptHelper.SignData(oldKeyPair, Encoding.UTF8.GetBytes(AppConfig.Current.ServiceKeyPair.PublicKey)),
+            });
+            AppConfig.Save();
+
+            DistNet_BroadcastKey();
+        }
+
+        public static System.Net.HttpStatusCode DistNet_Connect(string connectionNodeID)
+        {
+            var keys = Database.PublicKeys.All().OrderBy(x => x.Date).ToList();
+
+            var key = keys.Last();
+
+            DistNetMessage msg = new DistNetMessage();
+            msg.Serial = Database.PublicKeys.All().Count();
+            msg.NewKey = key.Algorithm.ToString() + ":" + key.Key;
+            msg.NewSignature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, Encoding.UTF8.GetBytes(key.Key));
+            msg.Signature = key.Signature;
+
+            using (HttpClient http = new HttpClient())
+            {
+                return http.PostAsync(string.Format("https://{0}/Node/Connect", connectionNodeID), JsonContent.Create(msg)).Result.StatusCode;
+            }
+        }
+
+        public static void DistNet_BroadcastKey()
+        {
+            var keys = Database.PublicKeys.All().OrderBy(x => x.Date).ToList();
+
+            var key = keys.Last();
+
+            DistNetMessage msg = new DistNetMessage();
+            msg.Serial = Database.PublicKeys.All().Count();
+            msg.NewKey = key.Algorithm.ToString() + ":" + key.Key;
+            msg.NewSignature = CryptHelper.SignData(AppConfig.Current.ServiceKeyPair, Encoding.UTF8.GetBytes(key.Key));
+            msg.Signature = key.Signature;
+            
+            Controllers.NodeController.ForwardMessage(msg);
         }
     }
 }

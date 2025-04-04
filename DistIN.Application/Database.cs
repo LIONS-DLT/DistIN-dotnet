@@ -7,6 +7,7 @@ using System.Security.Principal;
 using System.Text;
 using DistIN.DistAN;
 using Microsoft.Data.Sqlite;
+using DistIN.Application.DistNet;
 
 namespace DistIN.Application
 {
@@ -20,6 +21,7 @@ namespace DistIN.Application
         public static DatabaseEntitySet<DistINPublicKey> PublicKeys { get; private set; } = new DatabaseEntitySet<DistINPublicKey>();
         public static DatabaseEntitySet<AppToken> Tokens { get; private set; } = new DatabaseEntitySet<AppToken>();
         public static DatabaseEntitySet<OpenIDClient> OpenIDClients { get; private set; } = new DatabaseEntitySet<OpenIDClient>();
+        public static DatabaseEntitySet<DistNetNode> DistNetNodes { get; private set; } = new DatabaseEntitySet<DistNetNode>();
 
         // DistAN Enities
         public static DatabaseEntitySet<DistANMessage> Messages { get; private set; } = new DatabaseEntitySet<DistANMessage>();
@@ -50,42 +52,50 @@ namespace DistIN.Application
             }
         }
 
+        private static object _threadSafeLockObj = new { };
+
         public static DataTable QuerySQL(string sql)
         {
-            try
+            lock (_threadSafeLockObj)
             {
-                SqliteConnection con = new SqliteConnection(ConnectionString);
-                con.Open();
+                try
+                {
+                    SqliteConnection con = new SqliteConnection(ConnectionString);
+                    con.Open();
 
-                SqliteCommand adapter = new SqliteCommand(sql, con);
-                DataTable table = new DataTable();
-                table.Load(adapter.ExecuteReader());
+                    SqliteCommand adapter = new SqliteCommand(sql, con);
+                    DataTable table = new DataTable();
+                    table.Load(adapter.ExecuteReader());
 
-                con.Close();
-                return table;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Database Interface Error.", ex);
+                    con.Close();
+                    return table;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Database Interface Error.", ex);
+                }
             }
         }
         public static int ExecuteSQL(string sql)
         {
-            try
+            lock (_threadSafeLockObj)
             {
-                SqliteConnection con = new SqliteConnection(ConnectionString);
-                con.Open();
+                try
+                {
+                    SqliteConnection con = new SqliteConnection(ConnectionString);
+                    con.Open();
 
-                SqliteCommand cmd = con.CreateCommand();
-                cmd.CommandText = sql;
-                int result = cmd.ExecuteNonQuery();
+                    SqliteCommand cmd = con.CreateCommand();
+                    cmd.CommandText = sql;
+                    int result = cmd.ExecuteNonQuery();
 
-                con.Close();
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Database Interface Error.", ex);
+                    con.Close();
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Database Interface Error.", ex);
+                }
             }
         }
 
