@@ -22,6 +22,7 @@ namespace DistIN.Application
         public static DatabaseEntitySet<AppToken> Tokens { get; private set; } = new DatabaseEntitySet<AppToken>();
         public static DatabaseEntitySet<OpenIDClient> OpenIDClients { get; private set; } = new DatabaseEntitySet<OpenIDClient>();
         public static DatabaseEntitySet<DistNetNode> DistNetNodes { get; private set; } = new DatabaseEntitySet<DistNetNode>();
+        public static DatabaseEntitySet<AppLogEntry> AppLog { get; private set; } = new DatabaseEntitySet<AppLogEntry>();
 
         // DistAN Enities
         public static DatabaseEntitySet<DistANMessage> Messages { get; private set; } = new DatabaseEntitySet<DistANMessage>();
@@ -44,6 +45,9 @@ namespace DistIN.Application
                 CreateTableForType<DistINCredential>();
                 CreateTableForType<DistINPublicKey>();
                 CreateTableForType<AppToken>();
+                CreateTableForType<OpenIDClient>();
+                CreateTableForType<DistNetNode>();
+                CreateTableForType<AppLogEntry>();
                 // DistAN
                 CreateTableForType<DistANMessage>();
 

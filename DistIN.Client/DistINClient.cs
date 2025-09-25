@@ -1,5 +1,12 @@
 ﻿using DistIN.DistAN;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
+using Org.BouncyCastle.Security;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -214,6 +221,53 @@ namespace DistIN.Client
             return await postObject<DistANMessage, DistANMessage>(true, address[1], url, message);
         }
 
+        public static async Task<DistINResponse<OneTimeSignature>> RequestOneTimeSignature(string id, string dataAsUrlSafeBase64, OneTimeSignatureAlgorithm algorithm, string caption)
+        {
+            string[] address = id.Split('@');
+            string url = constructUrl(address[1], "oneTimeSignature", "id", address[0], "data", dataAsUrlSafeBase64, "algorithm", algorithm.ToString(), "caption", caption);
+            return await requestObject<OneTimeSignature>(address[1], url);
+        }
+        public static async Task<BlindSignatureResponse> RequestBlindSignature(string id, byte[] data, string caption)
+        {
+            string[] address = id.Split('@');
+
+            string url = constructUrl(address[1], "startRSABlindSignature", "id", address[0]);
+
+            DistINResponse<BlindSignatureKey> blindSignatureKeyResponse = await requestObject<BlindSignatureKey>(address[1], url);
+
+            BlindSignatureKey blindSignatureKey = blindSignatureKeyResponse.Result!;
+
+            var rsa = RSA.Create(1024);
+            rsa.ImportRSAPublicKey(CryptHelper.DecodeUrlBase64(blindSignatureKey.Key), out _);
+            RsaKeyParameters publicKey = DotNetUtilities.GetRsaPublicKey(rsa);
+
+            // ---
+            var blindingFactorGenerator = new RsaBlindingFactorGenerator();
+            blindingFactorGenerator.Init(publicKey);
+
+            var blindingFactor = blindingFactorGenerator.GenerateBlindingFactor();
+
+            RsaBlindingParameters blindingParams = new RsaBlindingParameters(publicKey, blindingFactor);
+            PssSigner signer = new PssSigner(new RsaBlindingEngine(), new Sha256Digest(), 20);
+
+            signer.Init(true, blindingParams);
+
+            signer.BlockUpdate(data, 0, data.Length);
+            byte[] sig = signer.GenerateSignature();
+            string signature = CryptHelper.EncodeUrlBase64(sig);
+            // ---
+
+            url = constructUrl(address[1], "getRSABlindSignature", "id", address[0], "keyId", blindSignatureKey.ID, "signature", signature, "caption", caption);
+            DistINResponse<OneTimeSignature> blindSignatureResponse = await requestObject<OneTimeSignature>(address[1], url);
+            OneTimeSignature blindSignature = blindSignatureResponse.Result!;
+
+            byte[] blindsign = CryptHelper.DecodeUrlBase64(blindSignature.Signature);
+            RsaBlindingEngine blindingEngine = new RsaBlindingEngine();
+            blindingEngine.Init(false, blindingParams);
+            byte[] finalSignature = blindingEngine.ProcessBlock(blindsign, 0, blindsign.Length);
+
+            return new BlindSignatureResponse(blindSignature, finalSignature);
+        }
 
 
         private static string constructDistANUrl(string domain, string action)
@@ -243,6 +297,12 @@ namespace DistIN.Client
         {
             return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}&{7}={8}", SCHEME, domain, action, parameterName1, Uri.EscapeDataString(parameterValue1), 
                 parameterName2, Uri.EscapeDataString(parameterValue2), parameterName3, Uri.EscapeDataString(parameterValue3));
+        }
+        private static string constructUrl(string domain, string action, string parameterName1, string parameterValue1,
+            string parameterName2, string parameterValue2, string parameterName3, string parameterValue3, string parameterName4, string parameterValue4)
+        {
+            return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}&{7}={8}&{9}={10}", SCHEME, domain, action, parameterName1, Uri.EscapeDataString(parameterValue1),
+                parameterName2, Uri.EscapeDataString(parameterValue2), parameterName3, Uri.EscapeDataString(parameterValue3), parameterName4, Uri.EscapeDataString(parameterValue4));
         }
 
         private static async Task<DistINResponse<T>> requestObject<T>(string service, string url) where T : DistINObject

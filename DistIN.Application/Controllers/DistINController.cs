@@ -7,6 +7,11 @@ using System;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Crypto.Engines;
 
 namespace DistIN.Application.Controllers
 {
@@ -15,7 +20,7 @@ namespace DistIN.Application.Controllers
     {
         #region HELPER METHODS
 
-        protected IActionResult getSignedObjectResult<T>(T data) where T : DistINObject
+        protected IActionResult getSignedObjectResult<T>(T data) where T : JsonSerializableObject
         {
             byte[] json = Encoding.UTF8.GetBytes(data.ToJsonString());
 
@@ -422,6 +427,101 @@ namespace DistIN.Application.Controllers
 
             return getSignedObjectResult(token);
         }
+
+
+        [HttpGet]
+        [HttpPost]
+        public IActionResult OneTimeSignature(string id, string data, string algorithm, string? caption)
+        {
+
+            if (string.IsNullOrEmpty(id))
+                return StatusCode(StatusCodes.Status400BadRequest);
+            if (string.IsNullOrEmpty(data))
+                return StatusCode(StatusCodes.Status400BadRequest);
+
+
+            OneTimeSignature ots = new OneTimeSignature();
+            ots.Algorithm = Enum.Parse<OneTimeSignatureAlgorithm>(algorithm);
+            ots.CreateSignatureAndKey(data);
+
+            string dataToSign = ots.GetSignedPayloadString();
+
+            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, dataToSign, caption, null, null);
+
+            if (response == null)
+                return StatusCode(StatusCodes.Status419AuthenticationTimeout);
+
+            ots.Identity = id;
+            ots.IdentitySignature = response.Signature;
+
+            return getSignedObjectResult(ots);
+        }
+
+
+        private static Dictionary<string, RSA> _rsaKeyPairs = new Dictionary<string, RSA>();
+
+        [HttpGet]
+        [HttpPost]
+        public IActionResult StartRSABlindSignature(string id)
+        {
+            var rsa = RSA.Create(1024);
+            BlindSignatureKey blindSignatureKey = new BlindSignatureKey();
+            blindSignatureKey.Key = CryptHelper.EncodeUrlBase64(rsa.ExportRSAPublicKey());
+
+            lock (_rsaKeyPairs)
+            {
+                _rsaKeyPairs.Add(blindSignatureKey.ID, rsa);
+            }
+
+            return getSignedObjectResult(blindSignatureKey);
+        }
+
+        [HttpGet]
+        [HttpPost]
+        public IActionResult GetRSABlindSignature(string id, string keyId, string signature, string caption)
+        {
+            RSA rsa;
+            lock(_rsaKeyPairs)
+            {
+                rsa = _rsaKeyPairs[keyId];
+            }
+
+            RsaPrivateCrtKeyParameters privateKey = (RsaPrivateCrtKeyParameters)DotNetUtilities.GetRsaKeyPair(rsa).Private;
+            RsaEngine engine = new RsaEngine();
+            engine.Init(true, privateKey);
+            byte[] sig = CryptHelper.DecodeUrlBase64(signature);
+            var blindsign = engine.ProcessBlock(sig, 0, sig.Length);
+
+            OneTimeSignature ots = new OneTimeSignature();
+            ots.Algorithm = OneTimeSignatureAlgorithm.RSA;
+            ots.ID = keyId;
+            ots.Key = CryptHelper.EncodeUrlBase64(rsa.ExportRSAPublicKey());
+            ots.Signature = CryptHelper.EncodeUrlBase64(blindsign);
+
+            string dataToSign = ots.GetSignedPayloadString();
+
+            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, dataToSign, caption, null, null);
+
+            if (response == null)
+                return StatusCode(StatusCodes.Status419AuthenticationTimeout);
+
+            ots.Identity = id;
+            ots.IdentitySignature = response.Signature;
+
+            return getSignedObjectResult(ots);
+        }
+
+
+        //public IActionResult BlindSignatureKeyRSA()
+        //{
+        //    RSAKeyPair keyPair = RSAKeyPair.Create();
+
+        //}
+        //public IActionResult BlindSignatureRSA()
+        //{
+
+        //}
+
 
         #endregion
 

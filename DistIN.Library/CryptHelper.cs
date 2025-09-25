@@ -1,4 +1,11 @@
-﻿using Org.BouncyCastle.Crypto;
+﻿using Org.BouncyCastle.Asn1.Ocsp;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Cms;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Pqc.Crypto.Crystals.Dilithium;
 using Org.BouncyCastle.Pqc.Crypto.Crystals.Kyber;
 using Org.BouncyCastle.Pqc.Crypto.Falcon;
@@ -171,11 +178,27 @@ namespace DistIN
 
                 DilithiumSigner verifier = new DilithiumSigner();
                 verifier.Init(false, pubKey);
-
                 return verifier.VerifySignature(data, sign);
             }
         }
 
+        public static bool VerifyBlindSignature(string publicKeyString, byte[] data, string signature)
+        {
+            return VerifyBlindSignature(publicKeyString, data, DecodeUrlBase64(signature));
+        }
+        public static bool VerifyBlindSignature(string publicKeyString, byte[] data, byte[] signature)
+        {
+            using (var rsa = RSA.Create(1024))
+            {
+                rsa.ImportRSAPublicKey(CryptHelper.DecodeUrlBase64(publicKeyString), out _);
+                RsaKeyParameters publicKey = DotNetUtilities.GetRsaPublicKey(rsa);
+
+                PssSigner signer = new PssSigner(new RsaEngine(), new Sha256Digest(), 20);
+                signer.Init(false, publicKey);
+                signer.BlockUpdate(data, 0, data.Length);
+                return signer.VerifySignature(signature);
+            }
+        }
 
         public static string GenerateAndEncryptKyberAESKey(string publicKey, out byte[] aesKey)
         {
@@ -276,6 +299,8 @@ namespace DistIN
                 return hash;
             }
         }
+
+
     }
 
     public class RSAKeyPair
@@ -298,6 +323,7 @@ namespace DistIN
 
         public RSA GetRSA()
         {
+
             RSA rsa = RSA.Create();
             rsa.ImportRSAPrivateKey(CryptHelper.DecodeUrlBase64(this.PrivateKey), out int b0);
             rsa.ImportRSAPublicKey(CryptHelper.DecodeUrlBase64(this.PublicKey), out int b1);
