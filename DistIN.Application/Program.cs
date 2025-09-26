@@ -20,11 +20,12 @@ builder.Services.AddSession(options =>
 builder.Services.Configure<KestrelServerOptions>(options =>
 {
     options.AllowSynchronousIO = true;
-    
+    options.Limits.MaxRequestBodySize = null;
+    options.ListenAnyIP(5000);
 });
 
 // TODO: for test scenario only!
-builder.WebHost.UseUrls("http://*:5157");
+// builder.WebHost.UseUrls("http://*:5157");
 
 var app = builder.Build();
 
