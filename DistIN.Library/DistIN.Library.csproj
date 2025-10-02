@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.3.0" />
+    <PackageReference Include="Hyperledger.Ursa.BbsSignatures" Version="0.1.0" />
   </ItemGroup>
 
 </Project>

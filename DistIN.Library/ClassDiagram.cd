@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
+  <Class Name="DistIN.DistINZkpCredential">
+    <Position X="1" Y="0.75" Width="6.25" />
+    <Members>
+      <Field Name="FrOrder" Hidden="true" />
+      <Method Name="generateBlindingFactorBytes" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAEEABAQAAAMAAAABAAAgAAAAAAAAAAAAAgAAQAAAAA=</HashCode>
+      <FileName>DistINZkpCredential.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DistIN.DistINZkpProof">
+    <Position X="1" Y="3.75" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>gAEAAAAQAAAEAAAAAIAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <FileName>DistINZkpCredential.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DistIN.DistINZkpProofMessage">
+    <Position X="4.75" Y="3.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAIAAAAAA=</HashCode>
+      <FileName>DistINZkpCredential.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

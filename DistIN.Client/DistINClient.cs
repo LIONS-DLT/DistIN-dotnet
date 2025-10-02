@@ -14,7 +14,7 @@ namespace DistIN.Client
 {
     public static class DistINClient
     {
-        public static string SCHEME = "http://"; // TODO: "https://"
+        public static string SCHEME = "https://"; // TODO: "https://"
 
         private static DistINKeyPair? keyPair = null;
         private static DistINPublicKey? publicKey = null;

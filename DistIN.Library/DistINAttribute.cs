@@ -21,6 +21,18 @@ namespace DistIN
         [PropertyNotInDatabase]
         public List<DistINAttributeSignatureReference> SignatureReferences { get; set; } = new List<DistINAttributeSignatureReference>();
 
+
+        public T GetValue<T>() where T : JsonSerializableObject
+        {
+            return JsonSerializableObject.FromJsonString<T>(this.Value);
+        }
+        public void SetValue<T>(T value) where T : JsonSerializableObject
+        {
+            this.Value = value.ToJsonString();
+            this.MimeType = DistINMimeTypes.JSON;
+        }
+
+
         public static string[] KnownAttributeNames =
         {
             "DistINRole",

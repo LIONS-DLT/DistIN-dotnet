@@ -1,9 +1,10 @@
-﻿#!/bin/bash
-set -euo pipefail
+﻿#!/bin/sh
+set -eu
 
 # Usage: ./distin-linux-x64-install.sh <webserver:apache2|nginx> <domain> <letsencrypt-email>
 
-if [[ $EUID -ne 0 ]]; then
+# root-check (ohne EUID: bashism)
+if [ "$(id -u)" -ne 0 ]; then
   echo "please execute as root (sudo)."
   exit 1
 fi
@@ -13,20 +14,17 @@ DOMAIN="${2:-}"
 EMAIL="${3:-}"
 PORT="5000"
 
-if [[ -z "$EMAIL" || -z "$DOMAIN" || -z "$WEBSERVER" ]]; then
+if [ -z "$WEBSERVER" ] || [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
   echo "error: missing parameters."
   echo "usage: $0 <webserver:apache2|nginx> <domain> <letsencrypt-email>"
   exit 1
 fi
 
-if [[ "$WEBSERVER" == "apache2" ]]; then
-  echo "installing DistIN instance with apache2:"
-elif [[ "$WEBSERVER" == "nginx" ]]; then
-  echo "installing DistIN instance with nginx:"
-else
-  echo "error: invalid web server parameter"
-  exit 1
-fi
+case "$WEBSERVER" in
+  apache2) echo "installing DistIN instance with apache2:" ;;
+  nginx)   echo "installing DistIN instance with nginx:" ;;
+  *) echo "error: invalid web server parameter"; exit 1 ;;
+esac
 
 echo "DistIN instance installation started..."
 
@@ -41,22 +39,26 @@ echo "extracting to /srv/distin ..."
 tar -xvzf /srv/distin-linux-x64.tar.gz -C /srv/distin
 rm -f /srv/distin-linux-x64.tar.gz || true
 
-# create user idempotently (system user, no login shell)
 echo "configuring user and rights..."
+# idempotent user creation (system user, no login)
 if id -u distinuser >/dev/null 2>&1; then
   echo "user 'distinuser' already exists."
 else
-  useradd --system --create-home --home-dir /srv/distin --shell /usr/sbin/nologin distinuser
+  # Fallback: create normal user if useradd not present
+  if command -v useradd >/dev/null 2>&1; then
+    useradd --system --create-home --home-dir /srv/distin --shell /usr/sbin/nologin distinuser
+  else
+    adduser --disabled-login --gecos "" distinuser || true
+  fi
 fi
 chown -R distinuser:distinuser /srv/distin
 chmod -R 700 /srv/distin
 
 # make app executable if present
-if [[ -f /srv/distin/DistIN.Application ]]; then
-  chmod +x /srv/distin/DistIN.Application
+if [ -f /srv/distin/distin/DistIN.Application ]; then
+  chmod +x /srv/distin/distin/DistIN.Application
 fi
 
-# systemd service
 echo "configuring service..."
 cat <<EOF >/etc/systemd/system/distin.service
 [Unit]
@@ -66,11 +68,10 @@ After=network.target
 [Service]
 Type=simple
 User=distinuser
-WorkingDirectory=/srv/distin
-Environment="ASPNETCORE_URLS=http://127.0.0.1:${PORT}"
-ExecStart=/srv/distin/DistIN.Application
+WorkingDirectory=/srv/distin/distin
+Environment=ASPNETCORE_URLS=http://127.0.0.1:${PORT}
+ExecStart=/srv/distin/distin/DistIN.Application
 Restart=on-failure
-# (optional) LimitRequestBody in Proxy ist hoch, also ggf. Kestrel-Limits in der App erhöhen
 
 [Install]
 WantedBy=multi-user.target
@@ -81,7 +82,14 @@ systemctl enable --now distin
 
 echo "configuring web server..."
 
-if [[ "$WEBSERVER" == "apache2" ]]; then
+# helper: backup file if exists
+backup_if_exists() {
+  if [ -f "$1" ]; then
+    cp -a "$1" "$1.bak.$(date +%s)"
+  fi
+}
+
+if [ "$WEBSERVER" = "apache2" ]; then
   # ---------------- Apache start ----------------
   echo "checking/installing apache2 & certbot..."
   apt-get update -y
@@ -90,7 +98,6 @@ if [[ "$WEBSERVER" == "apache2" ]]; then
 
   echo "creating apache vHost for ${DOMAIN}..."
   SITE_CONF="/etc/apache2/sites-available/${DOMAIN}.conf"
-  backup_if_exists() { [[ -f "$1" ]] && cp -a "$1" "$1.bak.$(date +%s)"; }
   mkdir -p /var/www/letsencrypt/.well-known/acme-challenge/
   backup_if_exists "$SITE_CONF"
 
@@ -105,7 +112,7 @@ if [[ "$WEBSERVER" == "apache2" ]]; then
     Timeout 3600
     RequestReadTimeout header=3600,MinRate=1 body=3600,MinRate=1
 
-    # ACME-Challenge (muss VOR ProxyPass ausgenommen werden)
+    # ACME-Challenge (aus Proxy ausnehmen)
     Alias /.well-known/acme-challenge/ /var/www/letsencrypt/.well-known/acme-challenge/
     <Directory "/var/www/letsencrypt/.well-known/acme-challenge/">
         Options None
@@ -144,7 +151,7 @@ EOF
   echo "finished (apache)."
   # ---------------- Apache end ----------------
 
-elif [[ "$WEBSERVER" == "nginx" ]]; then
+elif [ "$WEBSERVER" = "nginx" ]; then
   # ---------------- Nginx start ----------------
   echo "checking/installing nginx & certbot..."
   apt-get update -y
@@ -152,12 +159,12 @@ elif [[ "$WEBSERVER" == "nginx" ]]; then
 
   # optional global baseline
   if ! grep -q "client_max_body_size" /etc/nginx/nginx.conf; then
+    # GNU sed -i; ok auf Debian/Ubuntu
     sed -i 's/http {/http {\n    client_max_body_size 50m;/' /etc/nginx/nginx.conf
   fi
 
   SITE_AVAIL="/etc/nginx/sites-available/${DOMAIN}"
   SITE_ENABLED="/etc/nginx/sites-enabled/${DOMAIN}"
-  backup_if_exists() { [[ -f "$1" ]] && cp -a "$1" "$1.bak.$(date +%s)"; }
   mkdir -p /var/www/letsencrypt
   backup_if_exists "$SITE_AVAIL"
 
@@ -200,7 +207,9 @@ server {
 EOF
 
   ln -sf "$SITE_AVAIL" "$SITE_ENABLED"
-  [[ -e /etc/nginx/sites-enabled/default ]] && rm -f /etc/nginx/sites-enabled/default
+  if [ -e /etc/nginx/sites-enabled/default ]; then
+    rm -f /etc/nginx/sites-enabled/default
+  fi
 
   echo "testing nginx configuration..."
   nginx -t
