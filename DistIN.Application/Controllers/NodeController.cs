@@ -1,4 +1,5 @@
 ﻿using DistIN.Application.DistNet;
+using DistIN.DistAN;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Principal;
 using System.Text;
@@ -19,6 +20,7 @@ namespace DistIN.Application.Controllers
 
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINPublicKey))]
         public IActionResult PublicKey(string? date)
         {
             string identity = IDHelper.IDToIdentity("root");
@@ -44,6 +46,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistNetID))]
         public IActionResult ID()
         {
             DistNetID id = new DistNetID()
@@ -58,6 +61,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistNetNodeList))]
         public IActionResult List(string? filter)
         {
             if (string.IsNullOrEmpty(filter))
@@ -69,12 +73,14 @@ namespace DistIN.Application.Controllers
                 List<DistNetNode> result = new List<DistNetNode>();
                 result.AddRange(_neighbours);
                 result.AddRange(_neighboursNeighbours);
+
                 return Json(new { nodes = result });
             }
             else
                 return StatusCode(StatusCodes.Status400BadRequest);
         }
 
+        [ApiDefinition(InputType = typeof(DistNetMessage), ReturnType = typeof(DistNetNeighbourList))]
         public IActionResult Connect(DistNetMessage msg)
         {
             if(!validateMessage(msg))
@@ -99,6 +105,7 @@ namespace DistIN.Application.Controllers
             return Json(new { neighbours = _neighbours });
         }
 
+        [ApiDefinition(InputType = typeof(DistNetMessage), ReturnType = null)]
         public IActionResult Message(DistNetMessage msg)
         {
             if (!validateMessage(msg))

@@ -12,6 +12,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Crypto.Engines;
+using DistIN.DistAN;
 
 namespace DistIN.Application.Controllers
 {
@@ -89,6 +90,7 @@ namespace DistIN.Application.Controllers
         #region GET ACTIONS
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINPublicKey))]
         public IActionResult PublicKey(string id, string? date)
         {
             if (string.IsNullOrEmpty(id))
@@ -118,6 +120,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINAttribute))]
         public IActionResult Attribute(string? id, string? attributeId, string? attributeName, string? token)
         {
             if (!string.IsNullOrEmpty(token))
@@ -183,6 +186,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINAttributeSignature))]
         public IActionResult AttributeSignature(string id)
         {
             DistINAttributeSignature? signature = Database.AttributeSignatures.Find(id);
@@ -192,6 +196,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINServiceVerificationState))]
         public IActionResult ServiceVerificationState(string service)
         {
             if (string.IsNullOrEmpty(service))
@@ -206,7 +211,9 @@ namespace DistIN.Application.Controllers
 
             return getSignedObjectResult(state);
         }
+
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureRequestList))]
         public IActionResult SignatureRequests()
         {
             if(!checkToken())
@@ -226,6 +233,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureResponse))]
         public IActionResult Authenticate(string id, string challenge, string? caption, string? requiredAttributes, string? preferredAttributes)
         {
             if (string.IsNullOrEmpty(id))
@@ -310,6 +318,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpPost]
+        [ApiDefinition(InputType = typeof(DistINSignatureResponse), ReturnType = typeof(DistINSignatureResponse))]
         public IActionResult SignatureResponse()
         {
             if (!checkToken())
@@ -326,6 +335,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINLoginChallange))]
         public IActionResult LoginRequest(string id)
         {
             string identity = IDHelper.IDToIdentity(id);
@@ -340,12 +350,13 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = typeof(DistINLoginData), ReturnType = typeof(DistINCredential))]
         public IActionResult Login(string id)
         {
             DistINLoginData? loginData = getRequestObject<DistINLoginData>();
             if(loginData == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
-
+            
             string? challange = LoginRequestCache.GetChallange(loginData.ID);
             if (challange == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
@@ -377,6 +388,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINLoginChallange))]
         public IActionResult RegistrationRequest(string id)
         {
             if (!AppConfig.Current.AllowBlindRegistration)
@@ -390,6 +402,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = typeof(DistINRegistrationData), ReturnType = typeof(DistINCredential))]
         public IActionResult Register()
         {
             DistINRegistrationData? registrationData = getRequestObject<DistINRegistrationData>(false);
@@ -431,6 +444,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(OneTimeSignature))]
         public IActionResult OneTimeSignature(string id, string data, string algorithm, string? caption)
         {
 
@@ -462,6 +476,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(BlindSignatureKey))]
         public IActionResult StartRSABlindSignature(string id)
         {
             var rsa = RSA.Create(1024);
@@ -478,6 +493,7 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(OneTimeSignature))]
         public IActionResult GetRSABlindSignature(string id, string keyId, string signature, string caption)
         {
             RSA rsa;
@@ -498,6 +514,7 @@ namespace DistIN.Application.Controllers
             ots.Key = CryptHelper.EncodeUrlBase64(rsa.ExportRSAPublicKey());
             ots.Signature = CryptHelper.EncodeUrlBase64(blindsign);
 
+            ots.Identity = id;
             string dataToSign = ots.GetSignedPayloadString();
 
             DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, dataToSign, caption, null, null);
@@ -505,7 +522,6 @@ namespace DistIN.Application.Controllers
             if (response == null)
                 return StatusCode(StatusCodes.Status419AuthenticationTimeout);
 
-            ots.Identity = id;
             ots.IdentitySignature = response.Signature;
 
             return getSignedObjectResult(ots);

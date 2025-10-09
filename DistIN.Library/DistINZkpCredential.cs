@@ -50,7 +50,7 @@ namespace DistIN
             proof.Issuer = this.Issuer;
             proof.IssuerPublicBbsKey = this.IssuerPublicBbsKey;
             proof.IssuerSignature = this.IssuerSignature;
-            proof.MessageCount = this.Messages.Length;
+            proof.CredentialMessageCount = this.Messages.Length;
 
             List<DistINZkpProofMessage> messageList = new List<DistINZkpProofMessage>();
             foreach (int i in messagesToRevealIndices)
@@ -61,7 +61,7 @@ namespace DistIN
                     Message = this.Messages[i]
                 });
             }
-            proof.Messages = messageList.ToArray();
+            proof.RevealedMessages = messageList.ToArray();
 
             List<ProofMessage> proofMessages = new List<ProofMessage>();
             for (int i = 0; i < this.Messages.Length; i++)
@@ -76,7 +76,7 @@ namespace DistIN
             var bbs = new BbsSignatureService();
             var blindingFactor = generateBlindingFactorBytes();
             BlsKeyPair keyPair = new BlsKeyPair(CryptHelper.DecodeUrlBase64(this.IssuerPublicBbsKey));
-            BbsKeyPair bbsPublicKey = keyPair.GeyBbsKeyPair((uint)proof.MessageCount);
+            BbsKeyPair bbsPublicKey = keyPair.GeyBbsKeyPair((uint)proof.CredentialMessageCount);
 
             proof.Proof = CryptHelper.EncodeUrlBase64(bbs.CreateProof(new CreateProofRequest(bbsPublicKey, proofMessages.ToArray(), 
                 CryptHelper.DecodeUrlBase64(this.IssuerSignature), blindingFactor, nonce)));
@@ -89,10 +89,10 @@ namespace DistIN
             var bbs = new BbsSignatureService();
 
             BlsKeyPair keyPair = new BlsKeyPair(CryptHelper.DecodeUrlBase64(proof.IssuerPublicBbsKey));
-            BbsKeyPair bbsPublicKey = keyPair.GeyBbsKeyPair((uint)proof.MessageCount);
+            BbsKeyPair bbsPublicKey = keyPair.GeyBbsKeyPair((uint)proof.CredentialMessageCount);
 
             List<IndexedMessage> indexedMessages = new List<IndexedMessage>();
-            foreach(var msg in proof.Messages)
+            foreach(var msg in proof.RevealedMessages)
             {
                 indexedMessages.Add(new IndexedMessage()
                 {
@@ -136,9 +136,9 @@ namespace DistIN
         public string Issuer { get; set; } = string.Empty;
         public string IssuerPublicBbsKey { get; set; } = string.Empty;
         public string IssuerSignature { get; set; } = string.Empty;
-        public int MessageCount { get; set; }
+        public int CredentialMessageCount { get; set; }
         public string Proof { get; set; } = string.Empty;
-        public DistINZkpProofMessage[] Messages { get; set; } = new DistINZkpProofMessage[0];
+        public DistINZkpProofMessage[] RevealedMessages { get; set; } = new DistINZkpProofMessage[0];
     }
 
     public class DistINZkpProofMessage : JsonSerializableObject

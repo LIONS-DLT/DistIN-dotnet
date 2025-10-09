@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
   <Class Name="DistIN.DistINZkpCredential">
-    <Position X="1" Y="0.75" Width="6.25" />
+    <Position X="1" Y="0.75" Width="5.5" />
     <Members>
       <Field Name="FrOrder" Hidden="true" />
       <Method Name="generateBlindingFactorBytes" Hidden="true" />
@@ -12,14 +12,14 @@
     </TypeIdentifier>
   </Class>
   <Class Name="DistIN.DistINZkpProof">
-    <Position X="1" Y="3.75" Width="3.5" />
+    <Position X="1" Y="3.75" Width="4" />
     <TypeIdentifier>
-      <HashCode>gAEAAAAQAAAEAAAAAIAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <HashCode>AAEgAAAQAAAEAAAAAIAAAAAAAAAAAAAAAAAAAAQAAAA=</HashCode>
       <FileName>DistINZkpCredential.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="DistIN.DistINZkpProofMessage">
-    <Position X="4.75" Y="3.75" Width="2.5" />
+    <Position X="4.25" Y="4" Width="2.25" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAIAAAAAA=</HashCode>
       <FileName>DistINZkpCredential.cs</FileName>

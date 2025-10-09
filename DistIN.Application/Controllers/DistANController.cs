@@ -8,6 +8,7 @@ namespace DistIN.Application.Controllers
     {
 
         [HttpPost]
+        [ApiDefinition(InputType = typeof(DistANMessage), ReturnType = typeof(DistANMessage))]
         public IActionResult Message()
         {
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
@@ -31,6 +32,7 @@ namespace DistIN.Application.Controllers
         }
 
         [HttpGet]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistANMessageList))]
         public IActionResult Messages(string appId)
         {
             if (!checkToken())

@@ -9,12 +9,43 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+
+
 WEBSERVER="${1:-}"
 DOMAIN="${2:-}"
 EMAIL="${3:-}"
 PORT="5000"
 
-if [ -z "$WEBSERVER" ] || [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+
+if [ -z "$WEBSERVER" ]; then
+  echo "error: missing parameters."
+  echo "usage: $0 <webserver:apache2|nginx> <domain> <letsencrypt-email>"
+  exit 1
+fi
+
+# check for update parameter
+if [ "$WEBSERVER" = "update" ]; then
+
+systemctl stop distin
+echo "downloading distin-linux-x64.tar.gz"
+wget -O /srv/distin-linux-x64.tar.gz \
+  "https://raw.githubusercontent.com/LIONS-DLT/DistIN-dotnet/main/Deployments/distin-linux-x64.tar.gz"
+
+echo "extracting to /srv/distin ..."
+tar -xvzf /srv/distin-linux-x64.tar.gz -C /srv/distin
+rm -f /srv/distin-linux-x64.tar.gz || true
+
+chown -R distinuser:distinuser /srv/distin
+chmod -R 700 /srv/distin
+
+systemctl start distin
+  echo "finished (update)."
+
+  exit 1
+fi
+
+
+if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
   echo "error: missing parameters."
   echo "usage: $0 <webserver:apache2|nginx> <domain> <letsencrypt-email>"
   exit 1
