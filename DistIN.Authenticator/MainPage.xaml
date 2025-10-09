@@ -17,6 +17,12 @@
                 Padding="20"
                 HorizontalOptions="Fill" />
 
+            <Button
+                Text="Enter Request"
+                Clicked="OnEnterCodeClicked"
+                Padding="20"
+                HorizontalOptions="Fill" />
+
         </VerticalStackLayout>
     </ScrollView>
 

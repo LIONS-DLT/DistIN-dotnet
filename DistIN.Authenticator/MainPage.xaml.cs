@@ -52,41 +52,55 @@
                 if (string.IsNullOrEmpty(content))
                     return;
 
-                // create:id:challenge
-
-                string[] parameters = content.Split('|');
-
-                if (parameters[0] == "create") // create and register id
-                {
-                    string id = parameters[1];
-                    string regId = parameters[2];
-                    string regChallange = parameters[3];
-
-                    App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal(string.Format( "Password for '{0}':", id), (string pswd) =>
-                    {
-                        if (string.IsNullOrEmpty(pswd))
-                            return;
-
-                        App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal("Repeat password:", (string pswd2) =>
-                        {
-                            if (pswd2 != pswd)
-                                return;
-
-                            IdentityMaterial material = IdentityMaterial.Create(id, DistINKeyAlgorithm.DILITHIUM, pswd);
-
-                            bool success = DistIN.Client.DistINClient.Register(material.ID, regId, regChallange, material.KeyPair).Result;
-
-                            if (success)
-                                loadList();
-                        }));
-                    }));
-                }
-                else if (parameters[0] == "???") // ???
-                {
-
-                }
+                handleRequestContent(content);
 
             }));
+        }
+
+        private void OnEnterCodeClicked(object sender, EventArgs e)
+        {
+            App.Current.MainPage.Navigation.PushModalAsync(new EnterTextModal((string content) =>
+            {
+                if (string.IsNullOrEmpty(content))
+                    return;
+
+                handleRequestContent(content);
+            }));
+        }
+
+        private void handleRequestContent(string content)
+        {
+            string[] parameters = content.Split('|');
+
+            if (parameters[0] == "create") // create and register id
+            {
+                string id = parameters[1];
+                string regId = parameters[2];
+                string regChallange = parameters[3];
+
+                App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal(string.Format("Password for '{0}':", id), (string pswd) =>
+                {
+                    if (string.IsNullOrEmpty(pswd))
+                        return;
+
+                    App.Current.MainPage.Navigation.PushModalAsync(new PasswordModal("Repeat password:", (string pswd2) =>
+                    {
+                        if (pswd2 != pswd)
+                            return;
+
+                        IdentityMaterial material = IdentityMaterial.Create(id, DistINKeyAlgorithm.DILITHIUM, pswd);
+
+                        bool success = DistIN.Client.DistINClient.Register(material.ID, regId, regChallange, material.KeyPair).Result;
+
+                        if (success)
+                            loadList();
+                    }));
+                }));
+            }
+            else if (parameters[0] == "???") // ???
+            {
+
+            }
         }
     }
 }

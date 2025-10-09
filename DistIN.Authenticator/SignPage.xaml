@@ -10,6 +10,20 @@
             Padding="30,20"
             VerticalOptions="Center">
 
+            <Label 
+                x:Name="caption"
+                Text=""
+                Padding="20"
+                VerticalOptions="Center" 
+                HorizontalOptions="Center" />
+
+            <Label 
+                x:Name="data"
+                Text=""
+                Padding="20"
+                VerticalOptions="Center" 
+                HorizontalOptions="Center" />
+            
             <Button
                 Text="Sign / Accept"
                 Clicked="OnAcceptClick"

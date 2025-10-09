@@ -13,9 +13,14 @@
             <div class="mb-3">
                 <img src="@Url.Action("QR", "Home", new { qrcontent = qrcontent})" width="256" height="256" style="width:256px;height:auto" />
             </div>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" aria-label="Recipient’s username" aria-describedby="button-addon2" value="@qrcontent" id="qrcontent">
+                <button class="btn btn-outline-secondary" type="button" id="button-addon2" onclick="copyToClipboard('qrcontent')"><i class="bi bi-clipboard"></i></button>
+            </div>
             <div class="mb-3">
                 <a href="@Url.Action("FinishRegistration", "Admin", new { id = id})" class="btn btn-primary" type="submit"><i class="bi bi-check-circle"></i> Finish</a>
             </div>
         </div>
     </div>
 </div>
+

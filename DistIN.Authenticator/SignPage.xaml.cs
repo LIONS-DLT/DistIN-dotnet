@@ -27,7 +27,10 @@ public partial class SignPage : ContentPage
             layout.Remove(box);
         boxes.Clear();
 
-        int insertIndex = 0;
+        caption.Text = distINSignatureRequest.Caption;
+        data.Text = getTrimmedContentString(distINSignatureRequest.Challenge);
+
+        int insertIndex = 2;
         foreach (string attribute in signatureRequest.RequiredAttributes)
         {
             string name = attribute;
@@ -40,6 +43,17 @@ public partial class SignPage : ContentPage
             addCheckButton(insertIndex, attribute, name);
             insertIndex++;
         }
+    }
+
+    private string getTrimmedContentString(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return "";
+
+        if (text.Length > 100)
+            return text.Substring(0, 256) + "...";
+        else
+            return text;
     }
 
     private void addCheckButton(int insertIndex, string attribute, string name)

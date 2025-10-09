@@ -37,3 +37,11 @@ function executeAuth(buttonId, inputId) {
         }
     });
 }
+
+function copyToClipboard(inputId) {
+    console.log('copyToClipboard');
+    var textBox = document.getElementById(inputId);
+    textBox.focus();
+    textBox.select();
+    document.execCommand("copy", true);
+}

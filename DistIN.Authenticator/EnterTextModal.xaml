@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="DistIN.Authenticator.EnterTextModal"
+             Title="EnterTextModal">
+    <StackLayout Padding="{OnPlatform iOS='30,60,30,30', Default='30'}" Spacing="30" VerticalOptions="Center">
+        <Label Text="Enter text..."
+                x:Name="label"
+            FontSize="18"
+            HorizontalOptions="Start" />
+
+
+        <Frame>
+            <Editor x:Name="textEntry"
+                    HeightRequest="200"
+                    Placeholder="Text" Keyboard="Text"  />
+        </Frame>
+
+        <Button 
+                Text="OK"
+                FontAttributes="Bold"
+                Clicked="OkClicked"
+                HorizontalOptions="Fill" />
+        <Button 
+                Text="Cancel"
+                FontAttributes="Bold"
+                Clicked="CancelClicked"
+                HorizontalOptions="Fill" />
+    </StackLayout>
+</ContentPage>

@@ -90,6 +90,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiXaml Update="EnterTextModal.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="IdentityPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
