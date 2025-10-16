@@ -10,4 +10,10 @@ namespace DistIN
     {
         public string Key { get; set; } = string.Empty;
     }
+
+    public class ECBlindSignatureSession : DistINObject
+    {
+        public string Key { get; set; } = string.Empty;
+        public string R { get; set; } = string.Empty;
+    }
 }

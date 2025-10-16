@@ -1,9 +1,11 @@
 ﻿using DistIN.DistAN;
+using DistIN.ECBlindSign;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
+using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -227,7 +229,7 @@ namespace DistIN.Client
             string url = constructUrl(address[1], "oneTimeSignature", "id", address[0], "data", dataAsUrlSafeBase64, "algorithm", algorithm.ToString(), "caption", caption);
             return await requestObject<OneTimeSignature>(address[1], url);
         }
-        public static async Task<BlindSignatureResponse> RequestBlindSignature(string id, byte[] data, string caption)
+        public static async Task<BlindSignatureResponse> RequestRSABlindSignature(string id, byte[] data, string caption)
         {
             string[] address = id.Split('@');
 
@@ -268,6 +270,37 @@ namespace DistIN.Client
 
             return new BlindSignatureResponse(blindSignature, finalSignature);
         }
+
+        public static async Task<BlindSignatureResponse> RequestECBlindSignature(string id, byte[] data, string caption)
+        {
+            string[] address = id.Split('@');
+
+            string url = constructUrl(address[1], "startECBlindSignature", "id", address[0]);
+
+            DistINResponse<ECBlindSignatureSession> blindSignatureKeyResponse = await requestObject<ECBlindSignatureSession>(address[1], url);
+            ECBlindSchnorr requesterService = new ECBlindSchnorr(ECBlindCurve.secp256k1);
+
+            ECBlindSignatureSession blindSignatureSession = blindSignatureKeyResponse.Result!;
+            Org.BouncyCastle.Math.EC.ECPoint session_Key 
+                = requesterService.Domain.Curve.DecodePoint(CryptHelper.DecodeUrlBase64(blindSignatureSession.Key)).Normalize();
+            Org.BouncyCastle.Math.EC.ECPoint session_R
+                = requesterService.Domain.Curve.DecodePoint(CryptHelper.DecodeUrlBase64(blindSignatureSession.R)).Normalize();
+
+            ECBlindRequest blindReq = requesterService.RequesterBlindMessage(session_Key, session_R, data);
+            string eprime = CryptHelper.EncodeUrlBase64(blindReq.EPrime.ToByteArray());
+
+
+            url = constructUrl(address[1], "getECBlindSignature", "id", address[0], "keyId", blindSignatureKey.ID, "eprime", eprime, "caption", caption);
+            DistINResponse<OneTimeSignature> blindSignatureResponse = await requestObject<OneTimeSignature>(address[1], url);
+            OneTimeSignature blindSignature = blindSignatureResponse.Result!;
+
+            BigInteger sPrime = new BigInteger(CryptHelper.DecodeUrlBase64(blindSignature.Signature));
+            ECBlindSignature signature = requesterService.RequesterUnblind(blindReq, sPrime);
+
+
+            return new ECBlindSignatureResponse(blindSignature, signature);
+        }
+
 
 
         private static string constructDistANUrl(string domain, string action)

@@ -13,6 +13,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Crypto.Engines;
 using DistIN.DistAN;
+using DistIN.ECBlindSign;
 
 namespace DistIN.Application.Controllers
 {
@@ -500,6 +501,7 @@ namespace DistIN.Application.Controllers
             lock(_rsaKeyPairs)
             {
                 rsa = _rsaKeyPairs[keyId];
+                _rsaKeyPairs.Remove(keyId);
             }
 
             RsaPrivateCrtKeyParameters privateKey = (RsaPrivateCrtKeyParameters)DotNetUtilities.GetRsaKeyPair(rsa).Private;
@@ -528,15 +530,67 @@ namespace DistIN.Application.Controllers
         }
 
 
-        //public IActionResult BlindSignatureKeyRSA()
-        //{
-        //    RSAKeyPair keyPair = RSAKeyPair.Create();
+        private static Dictionary<string, KeyValuePair<ECBlindKeyPair, ECBlindSignerSession>> _ecKeyPairs = new Dictionary<string, KeyValuePair<ECBlindKeyPair, ECBlindSignerSession>>();
 
-        //}
-        //public IActionResult BlindSignatureRSA()
-        //{
+        [HttpGet]
+        [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(ECBlindSignatureSession))]
+        public IActionResult StartECBlindSignature(string id)
+        {
+            ECBlindSchnorr signerService = new ECBlindSchnorr(ECBlindCurve.secp256k1);
+            ECBlindKeyPair keyPair = signerService.GenerateKeyPair();
+            ECBlindSignerSession session = signerService.SignerBeginSession();
 
-        //}
+
+            ECBlindSignatureSession result = new ECBlindSignatureSession()
+            {
+                Key = CryptHelper.EncodeUrlBase64(keyPair.PublicKey.GetEncoded()),
+                R = CryptHelper.EncodeUrlBase64(session.R.GetEncoded())
+            };
+
+            lock (_ecKeyPairs)
+            {
+                _ecKeyPairs.Add(result.ID, new KeyValuePair<ECBlindKeyPair, ECBlindSignerSession>(keyPair, session));
+            }
+
+            return getSignedObjectResult(result);
+        }
+
+        [HttpGet]
+        [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(OneTimeSignature))]
+        public IActionResult GetECBlindSignature(string id, string keyId, string eprime, string caption)
+        {
+            KeyValuePair<ECBlindKeyPair, ECBlindSignerSession> session;
+            lock (_ecKeyPairs)
+            {
+                session = _ecKeyPairs[keyId];
+                _ecKeyPairs.Remove(keyId);
+            }
+
+            ECBlindSchnorr signerService = new ECBlindSchnorr(ECBlindCurve.secp256k1);
+            Org.BouncyCastle.Math.BigInteger ePrime = new Org.BouncyCastle.Math.BigInteger(CryptHelper.DecodeUrlBase64(eprime));
+            Org.BouncyCastle.Math.BigInteger sPrime = signerService.SignerFinish(session.Value, session.Key.PrivateKey, ePrime);
+
+
+            OneTimeSignature ots = new OneTimeSignature();
+            ots.Algorithm = OneTimeSignatureAlgorithm.ECDSA;
+            ots.ID = keyId;
+            ots.Key = CryptHelper.EncodeUrlBase64(session.Key.PublicKey.GetEncoded());
+            ots.Signature = CryptHelper.EncodeUrlBase64(sPrime.ToByteArray());
+
+            ots.Identity = id;
+            string dataToSign = ots.GetSignedPayloadString();
+
+            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, dataToSign, caption, null, null);
+
+            if (response == null)
+                return StatusCode(StatusCodes.Status419AuthenticationTimeout);
+
+            ots.IdentitySignature = response.Signature;
+
+            return getSignedObjectResult(ots);
+        }
 
 
         #endregion
