@@ -290,7 +290,7 @@ namespace DistIN.Client
             string eprime = CryptHelper.EncodeUrlBase64(blindReq.EPrime.ToByteArray());
 
 
-            url = constructUrl(address[1], "getECBlindSignature", "id", address[0], "keyId", blindSignatureKey.ID, "eprime", eprime, "caption", caption);
+            url = constructUrl(address[1], "getECBlindSignature", "id", address[0], "keyId", blindSignatureSession.ID, "eprime", eprime, "caption", caption);
             DistINResponse<OneTimeSignature> blindSignatureResponse = await requestObject<OneTimeSignature>(address[1], url);
             OneTimeSignature blindSignature = blindSignatureResponse.Result!;
 
