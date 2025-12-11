@@ -271,7 +271,7 @@ namespace DistIN.Client
             return new BlindSignatureResponse(blindSignature, finalSignature);
         }
 
-        public static async Task<BlindSignatureResponse> RequestECBlindSignature(string id, byte[] data, string caption)
+        public static async Task<ECBlindSignatureResponse> RequestECBlindSignature(string id, byte[] data, string caption)
         {
             string[] address = id.Split('@');
 
