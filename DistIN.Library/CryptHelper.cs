@@ -102,12 +102,12 @@ namespace DistIN
                 AsymmetricCipherKeyPair cypherKeyPair = generator.GenerateKeyPair();
                 DilithiumPrivateKeyParameters privateKey = (DilithiumPrivateKeyParameters)cypherKeyPair.Private;
                 DilithiumPublicKeyParameters publicKey = (DilithiumPublicKeyParameters)cypherKeyPair.Public;
-
+                
                 DistINKeyPair keyPair = new DistINKeyPair();
                 keyPair.Algorithm = DistINKeyAlgorithm.DILITHIUM;
                 keyPair.PublicKey = EncodeKey(privateKey.Rho, privateKey.T1);
                 keyPair.PrivateKey = EncodeKey(privateKey.K, privateKey.Tr, privateKey.S1, privateKey.S2, privateKey.T0);
-
+                
                 return keyPair;
             }
         }
