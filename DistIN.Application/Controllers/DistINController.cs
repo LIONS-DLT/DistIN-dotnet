@@ -235,6 +235,14 @@ namespace DistIN.Application.Controllers
         [HttpGet]
         [HttpPost]
         [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureResponse))]
+        public IActionResult SignatureRequest(string id, string data, string? caption)
+        {
+            return Authenticate(id, data, caption, null, null);
+        }
+
+        [HttpGet]
+        [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureResponse))]
         public IActionResult Authenticate(string id, string challenge, string? caption, string? requiredAttributes, string? preferredAttributes)
         {
             if (string.IsNullOrEmpty(id))
