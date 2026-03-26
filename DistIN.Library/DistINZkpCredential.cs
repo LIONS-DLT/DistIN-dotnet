@@ -15,7 +15,7 @@ namespace DistIN
         public string Issuer { get; set; } = string.Empty;
         public string IssuerPublicBbsKey { get; set; } = string.Empty;
         public string IssuerSignature { get; set; } = string.Empty;
-        public string[] Messages { get; set; } = new string[0];
+        public DistINSelectiveDisclosureMessage[] Messages { get; set; } = new DistINSelectiveDisclosureMessage[0];
 
 
         public static string GenerateIssuerBBSKey()
@@ -26,11 +26,11 @@ namespace DistIN
             return CryptHelper.EncodeUrlBase64(keyPair.SecretKey!.ToArray());
         }
 
-        public static DistINSelectiveDisclosureCredential IssueCredential(string issuerIdentity, string issuerBBSKey, string[] messages)
+        public static DistINSelectiveDisclosureCredential IssueCredential(string issuerIdentity, string issuerBBSKey, DistINSelectiveDisclosureMessage[] messages)
         {
             var bbs = new BbsSignatureService();
             BlsKeyPair keyPair = new BlsKeyPair(CryptHelper.DecodeUrlBase64(issuerBBSKey));
-            var signature = bbs.Sign(new SignRequest(keyPair, messages));
+            var signature = bbs.Sign(new SignRequest(keyPair, messages.Select(m=>m.Message).ToArray()));
 
             DistINSelectiveDisclosureCredential credential = new DistINSelectiveDisclosureCredential()
             {
@@ -55,11 +55,7 @@ namespace DistIN
             List<DistINSelectiveDisclosureMessage> messageList = new List<DistINSelectiveDisclosureMessage>();
             foreach (int i in messagesToRevealIndices)
             {
-                messageList.Add(new DistINSelectiveDisclosureMessage()
-                {
-                    Index = i,
-                    Message = this.Messages[i]
-                });
+                messageList.Add(this.Messages[i]);
             }
             proof.RevealedMessages = messageList.ToArray();
 
@@ -68,7 +64,7 @@ namespace DistIN
             {
                 proofMessages.Add(new ProofMessage()
                 {
-                    Message = this.Messages[i],
+                    Message = this.Messages[i].Message,
                     ProofType = messagesToRevealIndices.Contains(i) ? ProofMessageType.Revealed : ProofMessageType.HiddenProofSpecificBlinding
                 });
             }
@@ -143,6 +139,7 @@ namespace DistIN
 
     public class DistINSelectiveDisclosureMessage : JsonSerializableObject
     {
+        public string Name { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public int Index { get; set; }
     }

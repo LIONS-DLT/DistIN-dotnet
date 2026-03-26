@@ -605,7 +605,7 @@ namespace DistIN.Application.Controllers
         [HttpGet]
         [HttpPost]
         [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureResponse))]
-        public IActionResult SDCRequest(string id, string attributeName, string nonce, string? caption)
+        public IActionResult SDC(string id, string attributeName, string nonce, string? caption)
         {
             if (string.IsNullOrEmpty(id))
                 return StatusCode(StatusCodes.Status400BadRequest);
