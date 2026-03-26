@@ -10,7 +10,7 @@ using Org.BouncyCastle.Security;
 
 namespace DistIN
 {
-    public class DistINZkpCredential : JsonSerializableObject
+    public class DistINSelectiveDisclosureCredential : JsonSerializableObject
     {
         public string Issuer { get; set; } = string.Empty;
         public string IssuerPublicBbsKey { get; set; } = string.Empty;
@@ -26,13 +26,13 @@ namespace DistIN
             return CryptHelper.EncodeUrlBase64(keyPair.SecretKey!.ToArray());
         }
 
-        public static DistINZkpCredential IssueCredential(string issuerIdentity, string issuerBBSKey, string[] messages)
+        public static DistINSelectiveDisclosureCredential IssueCredential(string issuerIdentity, string issuerBBSKey, string[] messages)
         {
             var bbs = new BbsSignatureService();
             BlsKeyPair keyPair = new BlsKeyPair(CryptHelper.DecodeUrlBase64(issuerBBSKey));
             var signature = bbs.Sign(new SignRequest(keyPair, messages));
 
-            DistINZkpCredential credential = new DistINZkpCredential()
+            DistINSelectiveDisclosureCredential credential = new DistINSelectiveDisclosureCredential()
             {
                 Issuer = issuerIdentity,
                 IssuerPublicBbsKey = CryptHelper.EncodeUrlBase64(keyPair.PublicKey!.ToArray()),
@@ -43,19 +43,19 @@ namespace DistIN
             return credential;
         }
 
-        public DistINZkpProof CreateProof(int[] messagesToRevealIndices, string nonce)
+        public DistINSelectiveDisclosureProof CreateProof(int[] messagesToRevealIndices, string nonce)
         {
-            DistINZkpProof proof = new DistINZkpProof();
+            DistINSelectiveDisclosureProof proof = new DistINSelectiveDisclosureProof();
 
             proof.Issuer = this.Issuer;
             proof.IssuerPublicBbsKey = this.IssuerPublicBbsKey;
             proof.IssuerSignature = this.IssuerSignature;
             proof.CredentialMessageCount = this.Messages.Length;
 
-            List<DistINZkpProofMessage> messageList = new List<DistINZkpProofMessage>();
+            List<DistINSelectiveDisclosureMessage> messageList = new List<DistINSelectiveDisclosureMessage>();
             foreach (int i in messagesToRevealIndices)
             {
-                messageList.Add(new DistINZkpProofMessage()
+                messageList.Add(new DistINSelectiveDisclosureMessage()
                 {
                     Index = i,
                     Message = this.Messages[i]
@@ -84,7 +84,7 @@ namespace DistIN
             return proof;
         }
 
-        public static bool VerifyProof(DistINZkpProof proof, string nonce)
+        public static bool VerifyProof(DistINSelectiveDisclosureProof proof, string nonce)
         {
             var bbs = new BbsSignatureService();
 
@@ -131,19 +131,27 @@ namespace DistIN
         }
     }
 
-    public class DistINZkpProof : JsonSerializableObject
+    public class DistINSelectiveDisclosureProof : JsonSerializableObject
     {
         public string Issuer { get; set; } = string.Empty;
         public string IssuerPublicBbsKey { get; set; } = string.Empty;
         public string IssuerSignature { get; set; } = string.Empty;
         public int CredentialMessageCount { get; set; }
         public string Proof { get; set; } = string.Empty;
-        public DistINZkpProofMessage[] RevealedMessages { get; set; } = new DistINZkpProofMessage[0];
+        public DistINSelectiveDisclosureMessage[] RevealedMessages { get; set; } = new DistINSelectiveDisclosureMessage[0];
     }
 
-    public class DistINZkpProofMessage : JsonSerializableObject
+    public class DistINSelectiveDisclosureMessage : JsonSerializableObject
     {
         public string Message { get; set; } = string.Empty;
         public int Index { get; set; }
+    }
+
+    public class DistINSelectiveDisclosureResponse : JsonSerializableObject
+    {
+        public DistINSelectiveDisclosureProof Proof { get; set; } = new DistINSelectiveDisclosureProof();
+        public string Nonce { get; set; } = string.Empty;
+        public string Identity { get; set; } = string.Empty;
+        public string IdentitySignature { get; set; } = string.Empty;
     }
 }

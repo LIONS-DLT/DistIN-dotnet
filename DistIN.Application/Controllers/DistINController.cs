@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Org.BouncyCastle.Asn1.Cmp;
 using System.ComponentModel.DataAnnotations;
 using System;
+using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -600,6 +601,52 @@ namespace DistIN.Application.Controllers
             return getSignedObjectResult(ots);
         }
 
+
+        [HttpGet]
+        [HttpPost]
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureResponse))]
+        public IActionResult SDCRequest(string id, string attributeName, string nonce, string? caption)
+        {
+            if (string.IsNullOrEmpty(id))
+                return StatusCode(StatusCodes.Status400BadRequest);
+            if (string.IsNullOrEmpty(attributeName))
+                return StatusCode(StatusCodes.Status400BadRequest);
+            if (string.IsNullOrEmpty(nonce))
+                return StatusCode(StatusCodes.Status400BadRequest);
+
+            string identity = IDHelper.IDToIdentity(id);
+            DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), attributeName.ToSqlSafeValue())).FirstOrDefault();
+            if (attribute == null)
+                return StatusCode(StatusCodes.Status404NotFound);
+
+            DistINSelectiveDisclosureCredential credential = attribute.GetValue<DistINSelectiveDisclosureCredential>();
+            if(credential == null)
+                return StatusCode(StatusCodes.Status404NotFound);
+
+            string preferredAttributes = string.Join(',', credential.Messages);
+
+            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, nonce, $"SDC ({attributeName}): {caption}", null, preferredAttributes);
+            if(response == null)
+                return StatusCode(StatusCodes.Status419AuthenticationTimeout);
+
+            List<int> indices = new List<int>();
+            foreach (string attr in response.PermittedAttributes)
+            {
+                int idx = Array.IndexOf(credential.Messages, attr);
+                if (idx >= 0)
+                    indices.Add(idx);
+            }
+            
+            DistINSelectiveDisclosureProof proof = credential.CreateProof(indices.ToArray(), nonce);
+
+            DistINSelectiveDisclosureResponse selectiveDisclosureResponse = new DistINSelectiveDisclosureResponse();
+            selectiveDisclosureResponse.Identity = identity;
+            selectiveDisclosureResponse.Nonce = nonce;
+            selectiveDisclosureResponse.IdentitySignature = response.Signature;
+            selectiveDisclosureResponse.Proof = proof;
+
+            return getSignedObjectResult(selectiveDisclosureResponse);
+        }
 
         #endregion
 
