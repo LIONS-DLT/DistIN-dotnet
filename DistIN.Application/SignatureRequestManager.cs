@@ -1,15 +1,15 @@
 ﻿namespace DistIN.Application
 {
-    public static class AuthRequestCache
+    public static class SignatureRequestManager
     {
-        class AuthRequestCacheItem
+        class SignatureRequestCacheObject
         {
             public DistINSignatureRequest? Request { get; set; }
             public DistINSignatureResponse? Response { get; set; }
             public DateTime Timeout { get; set; } = DateTime.Now.AddMinutes(10);
         }
 
-        private static Dictionary<string, AuthRequestCacheItem> _cache = new Dictionary<string, AuthRequestCacheItem>();
+        private static Dictionary<string, SignatureRequestCacheObject> _cache = new Dictionary<string, SignatureRequestCacheObject>();
 
         private static void cleanUp()
         {
@@ -22,7 +22,7 @@
             lock( _cache )
             {
                 cleanUp();
-                _cache.Add(request.ID, new AuthRequestCacheItem()
+                _cache.Add(request.ID, new SignatureRequestCacheObject()
                 {
                     Request = request,
                     Timeout = timeout

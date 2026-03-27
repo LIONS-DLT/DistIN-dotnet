@@ -223,7 +223,7 @@ namespace DistIN.Application.Controllers
 
             string identity = this.HttpContext.Request.Headers["DistIN-ID"];
             DistINSignatureRequestList result = new DistINSignatureRequestList();
-            result.Requests = AuthRequestCache.GetRequests(identity);
+            result.Requests = SignatureRequestManager.GetRequests(identity);
 
             return getSignedObjectResult(result);
         }
@@ -316,13 +316,13 @@ namespace DistIN.Application.Controllers
 
             DateTime timeout = DateTime.Now.AddMinutes(10);
 
-            AuthRequestCache.AddRequest(request, timeout);
+            SignatureRequestManager.AddRequest(request, timeout);
             DistINSignatureResponse? response = null;
 
             while (response == null && timeout > DateTime.Now)
             {
                 Thread.Sleep(1000);
-                response = AuthRequestCache.GetAndRemoveResponse(request.ID);
+                response = SignatureRequestManager.GetAndRemoveResponse(request.ID);
             }
             return response;
         }
@@ -337,7 +337,7 @@ namespace DistIN.Application.Controllers
             if(response == null)
                 return StatusCode(StatusCodes.Status400BadRequest);
 
-            AuthRequestCache.AddResponse(response);
+            SignatureRequestManager.AddResponse(response);
 
             return getSignedObjectResult(response);
         }
