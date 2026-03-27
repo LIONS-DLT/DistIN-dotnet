@@ -89,7 +89,7 @@ namespace DistIN.Application.Controllers
 
         #endregion
 
-        #region GET ACTIONS
+        #region IDENTITY ACTIONS
 
         [HttpGet]
         [ApiDefinition(InputType = null, ReturnType = typeof(DistINPublicKey))]
@@ -623,7 +623,7 @@ namespace DistIN.Application.Controllers
             if(credential == null)
                 return StatusCode(StatusCodes.Status404NotFound);
 
-            string preferredAttributes = string.Join(',', credential.Messages);
+            string preferredAttributes = string.Join(',', credential.Messages.Select(m=>m.Name));
 
             DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, nonce, $"SDC ({attributeName}): {caption}", null, preferredAttributes);
             if(response == null)
@@ -632,9 +632,9 @@ namespace DistIN.Application.Controllers
             List<int> indices = new List<int>();
             foreach (string attr in response.PermittedAttributes)
             {
-                int idx = Array.IndexOf(credential.Messages, attr);
-                if (idx >= 0)
-                    indices.Add(idx);
+                var m = credential.Messages.FirstOrDefault(m => m.Name == attr);
+                if (m != null)
+                    indices.Add(m.Index);
             }
             
             DistINSelectiveDisclosureProof proof = credential.CreateProof(indices.ToArray(), nonce);
@@ -651,14 +651,11 @@ namespace DistIN.Application.Controllers
         #endregion
 
 
-        #region PUT ACTIONS
+        #region MESSAGE ACTIONS
 
         #endregion
 
 
-        #region DELETE ACTIONS
-
-        #endregion
 
     }
 }
