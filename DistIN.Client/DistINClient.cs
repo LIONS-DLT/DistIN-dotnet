@@ -302,6 +302,14 @@ namespace DistIN.Client
         }
 
 
+        public static async Task<DistINResponse<DistINSelectiveDisclosureResponse>> RequestSelectiveDisclosureProof(string id, string credentialName, string[] credentialAttributes, string nonce, string caption)
+        {
+            string[] address = id.Split('@');
+            string url = constructUrl(address[1], "SDC", "id", address[0], "credentialName", credentialName, "credentialAttributes", string.Join(',', credentialAttributes), "nonce", nonce, "caption", caption);
+            return await requestObject<DistINSelectiveDisclosureResponse>(address[1], url);
+        }
+
+
 
         private static string constructDistANUrl(string domain, string action)
         {
@@ -337,12 +345,19 @@ namespace DistIN.Client
             return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}&{7}={8}&{9}={10}", SCHEME, domain, action, parameterName1, Uri.EscapeDataString(parameterValue1),
                 parameterName2, Uri.EscapeDataString(parameterValue2), parameterName3, Uri.EscapeDataString(parameterValue3), parameterName4, Uri.EscapeDataString(parameterValue4));
         }
+        private static string constructUrl(string domain, string action, string parameterName1, string parameterValue1,
+            string parameterName2, string parameterValue2, string parameterName3, string parameterValue3, string parameterName4, string parameterValue4, string parameterName5, string parameterValue5)
+        {
+            return string.Format("{0}{1}/distin/{2}?{3}={4}&{5}={6}&{7}={8}&{9}={10}&{11}={12}", SCHEME, domain, action, parameterName1, Uri.EscapeDataString(parameterValue1),
+                parameterName2, Uri.EscapeDataString(parameterValue2), parameterName3, Uri.EscapeDataString(parameterValue3), parameterName4, Uri.EscapeDataString(parameterValue4), 
+                parameterName5, Uri.EscapeDataString(parameterValue5));
+        }
 
-        private static async Task<DistINResponse<T>> requestObject<T>(string service, string url) where T : DistINObject
+        private static async Task<DistINResponse<T>> requestObject<T>(string service, string url) where T : JsonSerializableObject
         {
             return await requestObject<T>(false, service, url);
         }
-        private static async Task<DistINResponse<T>> requestObject<T>(bool tokenRequred, string service, string url) where T : DistINObject
+        private static async Task<DistINResponse<T>> requestObject<T>(bool tokenRequred, string service, string url) where T : JsonSerializableObject
         {
             using (HttpClient http = new HttpClient())
             {
@@ -361,7 +376,7 @@ namespace DistIN.Client
                 DistINResponse<T> response = new DistINResponse<T>();
                 response.ResultBinary = await content.ReadAsByteArrayAsync();
                 //response.Result = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(response.ResultBinary), DistINObject.JsonSerializerOptions);
-                response.Result = DistINObject.FromJsonString<T>(Encoding.UTF8.GetString(response.ResultBinary));
+                response.Result = JsonSerializableObject.FromJsonString<T>(Encoding.UTF8.GetString(response.ResultBinary));
                 response.Service = service;
                 response.Signature = httpResponse.Headers.GetValues("DistIN-Signature").First();
                 response.ServiceVerificationType = Enum.Parse<DistINServiceVerificationType>(httpResponse.Headers.GetValues("DistIN-ServiceVerificationType").First());
@@ -370,11 +385,11 @@ namespace DistIN.Client
             }
         }
 
-        private static async Task<DistINResponse<T>> postObject<T, Y>(string service, string url, Y obj) where T : DistINObject where Y : DistINObject
+        private static async Task<DistINResponse<T>> postObject<T, Y>(string service, string url, Y obj) where T : JsonSerializableObject where Y : JsonSerializableObject
         {
             return await postObject<T, Y>(false, service, url, obj);
         }
-        private static async Task<DistINResponse<T>> postObject<T,Y>(bool tokenRequred, string service, string url, Y obj) where T : DistINObject where Y : DistINObject
+        private static async Task<DistINResponse<T>> postObject<T,Y>(bool tokenRequred, string service, string url, Y obj) where T : JsonSerializableObject where Y : JsonSerializableObject
         {
             using (HttpClient http = new HttpClient())
             {

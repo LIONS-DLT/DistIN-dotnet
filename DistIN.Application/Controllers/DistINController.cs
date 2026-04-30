@@ -604,18 +604,18 @@ namespace DistIN.Application.Controllers
 
         [HttpGet]
         [HttpPost]
-        [ApiDefinition(InputType = null, ReturnType = typeof(DistINSignatureResponse))]
-        public IActionResult SDC(string id, string attributeName, string nonce, string? caption)
+        [ApiDefinition(InputType = null, ReturnType = typeof(DistINSelectiveDisclosureResponse))]
+        public IActionResult SDC(string id, string credentialName, string credentialAttributes, string nonce, string? caption)
         {
             if (string.IsNullOrEmpty(id))
                 return StatusCode(StatusCodes.Status400BadRequest);
-            if (string.IsNullOrEmpty(attributeName))
+            if (string.IsNullOrEmpty(credentialName))
                 return StatusCode(StatusCodes.Status400BadRequest);
             if (string.IsNullOrEmpty(nonce))
                 return StatusCode(StatusCodes.Status400BadRequest);
 
             string identity = IDHelper.IDToIdentity(id);
-            DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), attributeName.ToSqlSafeValue())).FirstOrDefault();
+            DistINAttribute? attribute = Database.Attributes.Where(string.Format("[Identity]='{0}' AND [Name]='{1}'", identity.ToSqlSafeValue(), credentialName.ToSqlSafeValue())).FirstOrDefault();
             if (attribute == null)
                 return StatusCode(StatusCodes.Status404NotFound);
 
@@ -623,9 +623,10 @@ namespace DistIN.Application.Controllers
             if(credential == null)
                 return StatusCode(StatusCodes.Status404NotFound);
 
-            string preferredAttributes = string.Join(',', credential.Messages.Select(m=>m.Name));
+            string[] credentialAttributesArray = credentialAttributes.Split(',');
+            string preferredAttributes = string.Join(',', credential.Messages.Where(m => !credentialAttributesArray.Contains(m.Name)).Select(m => m.Name));
 
-            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, nonce, $"SDC ({attributeName}): {caption}", null, preferredAttributes);
+            DistINSignatureResponse? response = performAuthenticationRequest(this.HttpContext, id, nonce, $"SDC ({credentialName}): {caption}", credentialAttributes, preferredAttributes);
             if(response == null)
                 return StatusCode(StatusCodes.Status419AuthenticationTimeout);
 
